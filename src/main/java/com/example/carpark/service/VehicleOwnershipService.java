@@ -1,0 +1,57 @@
+package com.example.carpark.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.example.carpark.infrastructure.entity.Owner;
+import com.example.carpark.infrastructure.entity.Vehicle;
+import com.example.carpark.infrastructure.entity.VehicleOwnership;
+import com.example.carpark.infrastructure.repository.VehicleOwnershipRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class VehicleOwnershipService {
+
+	private final VehicleOwnershipRepository repo;
+	private final OwnerService ownerService;
+	private final VehicleService vehicleService;
+	
+	public VehicleOwnership createVehicleOwnership(VehicleOwnership body) {
+		Owner owner = ownerService.getOwnerById(body.getOwner().getId());
+		Vehicle vehicle = vehicleService.getVehicleById(body.getVehicle().getId());
+		body.setOwner(owner);
+		body.setVehicle(vehicle);
+		return repo.saveAndFlush(body);
+	}
+	
+	public List<VehicleOwnership> getAllVehicleOwnerships(){
+		return repo.findAll();
+	}
+	
+	public VehicleOwnership getVehicleOwnershipById(Long id) {
+		return repo.findById(id).orElseThrow(()->
+			new NullPointerException("No ressource found witha id : "+id));
+	}
+	
+	public VehicleOwnership updateVehicleOwnership(Long id, VehicleOwnership body) {
+		VehicleOwnership vehicleOwnership = getVehicleOwnershipById(id);
+		Owner owner = ownerService.getOwnerById(body.getOwner() != null ? 
+			body.getOwner().getId() : vehicleOwnership.getOwner().getId());
+		Vehicle vehicle = vehicleService.getVehicleById(body.getVehicle() != null ? 
+			body.getVehicle().getId() : vehicleOwnership.getVehicle().getId());
+		body.setId(vehicleOwnership.getId());
+		body.setOwner(owner);
+		body.setVehicle(vehicle);
+		return repo.saveAndFlush(body);
+	}
+	
+	public boolean deleteVehicleOwnership(Long id) {
+		if(!repo.existsById(id)) throw
+			new NullPointerException("No ressource found witha id : "+id);
+		repo.deleteById(id);
+		return !repo.existsById(id);
+	}
+}
