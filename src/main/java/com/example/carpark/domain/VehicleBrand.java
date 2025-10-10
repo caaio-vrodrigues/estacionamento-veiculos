@@ -6,7 +6,8 @@ public enum VehicleBrand {
 	FERRARI("Ferrari", "Itália"),
 	MERCEDES_BENZ("Mercedes-benz", "Alemanha"),
 	FIAT("Fiat", "Itália"),
-	PEUGEOT("Peugeot", "França");
+	PEUGEOT("Peugeot", "França"),
+	SUZUKI("Suzuki", "Japão");
 	
 	private final String name;
 	private final String country;

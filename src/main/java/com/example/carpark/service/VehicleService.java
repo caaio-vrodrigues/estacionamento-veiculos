@@ -41,6 +41,8 @@ public class VehicleService {
 			body.getBrand() : vehicle.getBrand());
 		body.setCountry(body.getBrand() != null ? 
 			body.getBrand().getCountry() : vehicle.getCountry());
+		body.setType(body.getType() != null ? 
+			body.getType() : vehicle.getType());
 		return repo.saveAndFlush(body);
 	}
 	

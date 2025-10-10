@@ -1,5 +1,6 @@
 package com.example.carpark.infrastructure.entity;
 
+import com.example.carpark.domain.ParkingSpacePrice;
 import com.example.carpark.domain.VehicleBrand;
 
 import jakarta.persistence.Column;
@@ -36,5 +37,8 @@ public class Vehicle {
 	
 	@Column(name="plaque", nullable=false, unique=true)
 	private String plaque;
+	
+	@Column(name="type", nullable=false)
+	private ParkingSpacePrice type;
 }
 	
