@@ -16,6 +16,8 @@ public class VehicleService {
 	private final VehicleRepository repo;
 	
 	public Vehicle createVehicle(Vehicle body) {
+		if(repo.findByPlaque(body.getPlaque()) != null)
+			throw new RuntimeException("The vehicle already exists");
 		body.setBrand(body.getBrand());
 		body.setCountry(body.getBrand().getCountry());
 		return repo.saveAndFlush(body);

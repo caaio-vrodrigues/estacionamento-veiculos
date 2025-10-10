@@ -22,6 +22,11 @@ public class VehicleOwnershipService {
 	public VehicleOwnership createVehicleOwnership(VehicleOwnership body) {
 		Owner owner = ownerService.getOwnerById(body.getOwner().getId());
 		Vehicle vehicle = vehicleService.getVehicleById(body.getVehicle().getId());
+		List<VehicleOwnership> vehicleOwnershipList = repo.findAllByOwner(owner);
+		vehicleOwnershipList.forEach(vehicleOwnership -> {
+			if(vehicleOwnership.getVehicle().getPlaque() == vehicle.getPlaque())
+				throw new RuntimeException("The client already exists");
+		});
 		body.setOwner(owner);
 		body.setVehicle(vehicle);
 		return repo.saveAndFlush(body);

@@ -16,6 +16,8 @@ public class OwnerService {
 	private final OwnerRepository repo;
 	
 	public Owner createOwner(Owner body) {
+		if(repo.findByDriversLicense(body.getDriversLicense()) != null)
+			throw new RuntimeException("The owner already exists");
 		return repo.saveAndFlush(body);
 	}
 	

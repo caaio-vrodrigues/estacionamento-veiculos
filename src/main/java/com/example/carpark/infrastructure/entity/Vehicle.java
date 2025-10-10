@@ -26,7 +26,7 @@ public class Vehicle {
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Long id;
 	
-	@Column(name="model", nullable=false, unique=true)
+	@Column(name="model", nullable=false)
 	private String model;
 	
 	@Column(name="brand", nullable=false)

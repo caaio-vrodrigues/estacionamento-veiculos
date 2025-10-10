@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.example.carpark.infrastructure.entity.Vehicle;
 
 @Repository
-public interface VehicleRepository extends JpaRepository<Vehicle, Long> {}
+public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
+	public Vehicle findByPlaque(String plaque);
+}

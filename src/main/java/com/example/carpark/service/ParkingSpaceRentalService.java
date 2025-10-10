@@ -27,14 +27,22 @@ public class ParkingSpaceRentalService {
 			.getParkingSpaceById(body.getParkingSpace().getId());
 		if(parkingSpace.getOccupied()) 
 			throw new RuntimeException("Vaga ocupada");
-		VehicleOwnership vehicleOwner = vehicleOwnershipService
+		VehicleOwnership vehicleOwnership = vehicleOwnershipService
 			.getVehicleOwnershipById(body.getVehicleOwnership().getId());
-		if(parkingSpace.getType() != vehicleOwner.getVehicle().getType())
+		if(parkingSpace.getType() != vehicleOwnership.getVehicle().getType())
 			throw new RuntimeException("Vaga incompatível");
+		List<ParkingSpaceRental> parkingSpaceRentalList = repo
+			.findAllByVehicleOwnership(vehicleOwnership);
+		parkingSpaceRentalList.forEach(parkingSpaceRental -> {
+			if(parkingSpaceRental.getParkingSpace().getOccupied() == true && 
+				parkingSpaceRental.getVehicleOwnership().getVehicle().getPlaque() == 
+					vehicleOwnership.getVehicle().getPlaque())
+				throw new RuntimeException("The vehicle is already in the parking space");
+		});
 		parkingSpace.setOccupied(true);
 		body.setStartRenting(LocalDateTime.now());
 		body.setParkingSpace(parkingSpace);
-		body.setVehicleOwnership(vehicleOwner);
+		body.setVehicleOwnership(vehicleOwnership);
 		return repo.saveAndFlush(body);
 	}
 	
@@ -96,7 +104,8 @@ public class ParkingSpaceRentalService {
 			parkingSpaceRental.getEndRenting());
 		BigDecimal durationInHours = new BigDecimal(duration.toHours());
 		BigDecimal hourPrice = parkingSpaceRental.getParkingSpace().getPrice();
-		parkingSpaceRental.setTotalRent(durationInHours.multiply(hourPrice).add(hourPrice));
+		parkingSpaceRental.setTotalRent(durationInHours
+			.multiply(hourPrice).add(hourPrice));
 		return repo.saveAndFlush(parkingSpaceRental);
 	}
 }
