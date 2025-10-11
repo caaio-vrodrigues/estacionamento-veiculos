@@ -8,4 +8,5 @@ import com.example.carpark.infrastructure.entity.Vehicle;
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 	public Vehicle findByPlaque(String plaque);
+	public boolean existsByPlaque(String plaque);
 }

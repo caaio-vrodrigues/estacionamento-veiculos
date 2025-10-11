@@ -18,7 +18,7 @@ public class VehicleService {
 	private final VehicleRepository repo;
 	
 	public Vehicle createVehicle(Vehicle body) {
-		boolean existingVehiclePlaque = repo.findByPlaque(body.getPlaque()) != null;
+		boolean existingVehiclePlaque = repo.existsByPlaque(body.getPlaque());
 		if(existingVehiclePlaque)
 			throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
 		body.setBrand(body.getBrand());
@@ -51,8 +51,8 @@ public class VehicleService {
 	}
 	
 	public boolean deleteVehicle(Long id) {
-		boolean existingOwner = repo.existsById(id);
-		if(!existingOwner) throw new NullPointerException("No ressource found witha id : "+id);
+		boolean existingVehicle = repo.existsById(id);
+		if(!existingVehicle) throw new ResourceNotFoundException("No ressource found with id: "+id);
 		repo.deleteById(id);
 		return true;
 	}

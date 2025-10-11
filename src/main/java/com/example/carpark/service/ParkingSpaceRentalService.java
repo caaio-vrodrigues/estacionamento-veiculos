@@ -107,8 +107,8 @@ public class ParkingSpaceRentalService {
 	}
 	
 	public boolean deleteParkingSpaceRental(Long id) {
-		boolean existingOwner = repo.existsById(id);
-		if(!existingOwner) throw new ResourceNotFoundException("No resource found with id: "+id);
+		boolean existingParkingSpaceRental = repo.existsById(id);
+		if(!existingParkingSpaceRental) throw new ResourceNotFoundException("No resource found with id: "+id);
 		repo.deleteById(id);
 		return true;
 	}

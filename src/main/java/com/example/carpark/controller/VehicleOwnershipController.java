@@ -26,9 +26,9 @@ public class VehicleOwnershipController {
 	
 	@PostMapping
 	public ResponseEntity<VehicleOwnership> newVehicleOwnership(
-		@RequestBody VehicleOwnership VehicleOwnership
+		@RequestBody VehicleOwnership vehicleOwnership
 	){
-		return ResponseEntity.ok(service.createVehicleOwnership(VehicleOwnership));
+		return ResponseEntity.ok(service.createVehicleOwnership(vehicleOwnership));
 	}
 	
 	@GetMapping

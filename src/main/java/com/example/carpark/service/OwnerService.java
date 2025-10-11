@@ -18,7 +18,7 @@ public class OwnerService {
 	private final OwnerRepository repo;
 	
 	public Owner createOwner(Owner body) {
-		boolean existingDriversLisence = repo.findByDriversLicense(body.getDriversLicense()) != null;
+		boolean existingDriversLisence = repo.existsByDriversLicense(body.getDriversLicense());
 		if(existingDriversLisence) {
 			String driversLicense = body.getDriversLicense();
 			throw new ResourceAlreadyExistsException("The owner with drivers license "+driversLicense+" already exists");
