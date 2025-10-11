@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.infrastructure.entity.Vehicle;
 import com.example.carpark.infrastructure.repository.VehicleRepository;
 
@@ -17,7 +18,7 @@ public class VehicleService {
 	
 	public Vehicle createVehicle(Vehicle body) {
 		if(repo.findByPlaque(body.getPlaque()) != null)
-			throw new RuntimeException("The vehicle already exists");
+			throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
 		body.setBrand(body.getBrand());
 		body.setCountry(body.getBrand().getCountry());
 		return repo.saveAndFlush(body);
@@ -41,16 +42,16 @@ public class VehicleService {
 			body.getModel() : vehicle.getModel());
 		body.setBrand(body.getBrand() != null ? 
 			body.getBrand() : vehicle.getBrand());
-		body.setCountry(body.getBrand() != null ? 
-			body.getBrand().getCountry() : vehicle.getCountry());
 		body.setType(body.getType() != null ? 
 			body.getType() : vehicle.getType());
+		body.setCountry(body.getBrand() != null ? 
+			body.getBrand().getCountry() : vehicle.getCountry());
 		return repo.saveAndFlush(body);
 	}
 	
 	public boolean deleteVehicle(Long id) {
-		if(!repo.existsById(id)) throw
-			new NullPointerException("No ressource found witha id : "+id);
+		if(!repo.existsById(id)) 
+			throw new NullPointerException("No ressource found witha id : "+id);
 		repo.deleteById(id);
 		return !repo.existsById(id);
 	}

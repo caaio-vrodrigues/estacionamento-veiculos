@@ -1,9 +1,12 @@
 package com.example.carpark.service;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
+import com.example.carpark.customexception.ResourceAlreadyExistsException;
+import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.infrastructure.entity.Owner;
 import com.example.carpark.infrastructure.entity.Vehicle;
 import com.example.carpark.infrastructure.entity.VehicleOwnership;
@@ -24,8 +27,11 @@ public class VehicleOwnershipService {
 		Vehicle vehicle = vehicleService.getVehicleById(body.getVehicle().getId());
 		List<VehicleOwnership> vehicleOwnershipList = repo.findAllByOwner(owner);
 		vehicleOwnershipList.forEach(vehicleOwnership -> {
-			if(vehicleOwnership.getVehicle().getPlaque() == vehicle.getPlaque())
-				throw new RuntimeException("The client already exists");
+			String existingVehiclePlaque = vehicleOwnership.getVehicle().getPlaque();
+			String newVehiclePlaque = vehicle.getPlaque();
+			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque);
+			if(samePlaque)
+				throw new ResourceAlreadyExistsException("The client already exists");
 		});
 		body.setOwner(owner);
 		body.setVehicle(vehicle);
@@ -38,7 +44,7 @@ public class VehicleOwnershipService {
 	
 	public VehicleOwnership getVehicleOwnershipById(Long id) {
 		return repo.findById(id).orElseThrow(()->
-			new NullPointerException("No ressource found witha id : "+id));
+			new ResourceNotFoundException("No ressource found with id: "+id));
 	}
 	
 	public VehicleOwnership updateVehicleOwnership(Long id, VehicleOwnership body) {
@@ -54,9 +60,9 @@ public class VehicleOwnershipService {
 	}
 	
 	public boolean deleteVehicleOwnership(Long id) {
-		if(!repo.existsById(id)) throw
-			new NullPointerException("No ressource found witha id : "+id);
+		if(!repo.existsById(id)) 
+			throw new ResourceNotFoundException("No ressource found witha id: "+id);
 		repo.deleteById(id);
-		return !repo.existsById(id);
+		return true;
 	}
 }

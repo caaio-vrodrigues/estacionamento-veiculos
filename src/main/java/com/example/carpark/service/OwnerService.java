@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.carpark.customexception.ResourceAlreadyExistsException;
+import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.infrastructure.entity.Owner;
 import com.example.carpark.infrastructure.repository.OwnerRepository;
 
@@ -16,8 +18,12 @@ public class OwnerService {
 	private final OwnerRepository repo;
 	
 	public Owner createOwner(Owner body) {
-		if(repo.findByDriversLicense(body.getDriversLicense()) != null)
-			throw new RuntimeException("The owner already exists");
+		boolean existingDriversLisence = repo
+			.findByDriversLicense(body.getDriversLicense()) != null;
+		if(existingDriversLisence) {
+			String driversLicense = body.getDriversLicense();
+			throw new ResourceAlreadyExistsException("The owner with drivers license "+driversLicense+" already exists");
+		}
 		return repo.saveAndFlush(body);
 	}
 	
@@ -27,23 +33,23 @@ public class OwnerService {
 	
 	public Owner getOwnerById(Long id) {
 		return repo.findById(id).orElseThrow(()->
-			new NullPointerException("No ressource found witha id : "+id));
+			new ResourceNotFoundException("No resource found with id: "+id));
 	}
 	
 	public Owner updateOwner(Long id, Owner body) {
 		Owner owner = getOwnerById(id);
+		boolean newFullName = body.getFullName() != null;
+		boolean newDriversLicense = body.getDriversLicense() != null;
 		body.setId(owner.getId());
-		body.setFullName(body.getFullName() != null ? 
-			body.getFullName() : owner.getFullName());
-		body.setDriversLicense(body.getDriversLicense() != null ? 
-			body.getDriversLicense() : owner.getDriversLicense());
+		body.setFullName(newFullName ? body.getFullName() : owner.getFullName());
+		body.setDriversLicense(newDriversLicense ? body.getDriversLicense() : owner.getDriversLicense());
 		return repo.saveAndFlush(body);
 	}
 	
 	public boolean deleteOwner(Long id) {
-		if(!repo.existsById(id)) throw
-			new NullPointerException("No ressource found witha id : "+id);
+		boolean existingOwner = repo.existsById(id);
+		if(!existingOwner) throw new ResourceNotFoundException("No resource found with id: "+id);
 		repo.deleteById(id);
-		return !repo.existsById(id);
+		return true;
 	}
 }
