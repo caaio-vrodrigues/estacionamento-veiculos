@@ -33,19 +33,18 @@ public class ParkingSpaceService {
 	
 	public ParkingSpace updateParkingSpace(Integer id, ParkingSpace body) {
 		ParkingSpace parkingSpace = getParkingSpaceById(id);
+		boolean containsType = body.getType() != null;
+		boolean containsOccupied = body.getOccupied() != null;
 		body.setId(parkingSpace.getId());
-		body.setType(body.getType() != null ? body.getType() : parkingSpace.getType());
-		body.setPrice(body.getType() != null ? 
-			body.getType().getPrice() : parkingSpace.getType().getPrice());
-		body.setOccupied(body.getOccupied() != null ? 
-			body.getOccupied() : parkingSpace.getOccupied());
+		body.setType(containsType ? body.getType() : parkingSpace.getType());
+		body.setPrice(containsType ? body.getType().getPrice() : parkingSpace.getType().getPrice());
+		body.setOccupied(containsOccupied ? body.getOccupied() : parkingSpace.getOccupied());
 		return repo.saveAndFlush(body);
 	}
 	
 	public boolean deleteParkingSpace(Integer id) {
 		boolean existingOwner = repo.existsById(id);
-		if(!existingOwner) throw
-			new ResourceNotFoundException("No resource found with id: "+id);
+		if(!existingOwner) throw new ResourceNotFoundException("No resource found with id: "+id);
 		repo.deleteById(id);
 		return true;
 	}

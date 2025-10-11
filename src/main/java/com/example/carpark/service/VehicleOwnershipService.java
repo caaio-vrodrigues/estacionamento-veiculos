@@ -30,8 +30,7 @@ public class VehicleOwnershipService {
 			String existingVehiclePlaque = vehicleOwnership.getVehicle().getPlaque();
 			String newVehiclePlaque = vehicle.getPlaque();
 			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque);
-			if(samePlaque)
-				throw new ResourceAlreadyExistsException("The client already exists");
+			if(samePlaque) throw new ResourceAlreadyExistsException("The client already exists");
 		});
 		body.setOwner(owner);
 		body.setVehicle(vehicle);
@@ -49,9 +48,11 @@ public class VehicleOwnershipService {
 	
 	public VehicleOwnership updateVehicleOwnership(Long id, VehicleOwnership body) {
 		VehicleOwnership vehicleOwnership = getVehicleOwnershipById(id);
-		Owner owner = ownerService.getOwnerById(body.getOwner() != null ? 
+		boolean containsOwner = body.getOwner() != null;
+		boolean containsVehicle = body.getVehicle() != null;
+		Owner owner = ownerService.getOwnerById(containsOwner ? 
 			body.getOwner().getId() : vehicleOwnership.getOwner().getId());
-		Vehicle vehicle = vehicleService.getVehicleById(body.getVehicle() != null ? 
+		Vehicle vehicle = vehicleService.getVehicleById(containsVehicle ? 
 			body.getVehicle().getId() : vehicleOwnership.getVehicle().getId());
 		body.setId(vehicleOwnership.getId());
 		body.setOwner(owner);
@@ -61,8 +62,7 @@ public class VehicleOwnershipService {
 	
 	public boolean deleteVehicleOwnership(Long id) {
 		boolean existingOwner = repo.existsById(id);
-		if(!existingOwner) 
-			throw new ResourceNotFoundException("No ressource found witha id: "+id);
+		if(!existingOwner) throw new ResourceNotFoundException("No ressource found witha id: "+id);
 		repo.deleteById(id);
 		return true;
 	}
