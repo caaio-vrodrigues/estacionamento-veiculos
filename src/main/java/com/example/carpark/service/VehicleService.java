@@ -50,9 +50,10 @@ public class VehicleService {
 	}
 	
 	public boolean deleteVehicle(Long id) {
-		if(!repo.existsById(id)) 
+		boolean existingOwner = repo.existsById(id);
+		if(!existingOwner) 
 			throw new NullPointerException("No ressource found witha id : "+id);
 		repo.deleteById(id);
-		return !repo.existsById(id);
+		return true;
 	}
 }

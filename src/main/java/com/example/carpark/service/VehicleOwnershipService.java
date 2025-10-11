@@ -60,7 +60,8 @@ public class VehicleOwnershipService {
 	}
 	
 	public boolean deleteVehicleOwnership(Long id) {
-		if(!repo.existsById(id)) 
+		boolean existingOwner = repo.existsById(id);
+		if(!existingOwner) 
 			throw new ResourceNotFoundException("No ressource found witha id: "+id);
 		repo.deleteById(id);
 		return true;

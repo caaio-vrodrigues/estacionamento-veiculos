@@ -34,19 +34,19 @@ public class ParkingSpaceService {
 	public ParkingSpace updateParkingSpace(Integer id, ParkingSpace body) {
 		ParkingSpace parkingSpace = getParkingSpaceById(id);
 		body.setId(parkingSpace.getId());
-		if(body.getType() != null) {
-			body.setType(body.getType());
-			body.setPrice(body.getType().getPrice());
-		}
+		body.setType(body.getType() != null ? body.getType() : parkingSpace.getType());
+		body.setPrice(body.getType() != null ? 
+			body.getType().getPrice() : parkingSpace.getType().getPrice());
 		body.setOccupied(body.getOccupied() != null ? 
 			body.getOccupied() : parkingSpace.getOccupied());
 		return repo.saveAndFlush(body);
 	}
 	
 	public boolean deleteParkingSpace(Integer id) {
-		if(!repo.existsById(id)) throw
+		boolean existingOwner = repo.existsById(id);
+		if(!existingOwner) throw
 			new ResourceNotFoundException("No resource found with id: "+id);
 		repo.deleteById(id);
-		return !repo.existsById(id);
+		return true;
 	}
 }
