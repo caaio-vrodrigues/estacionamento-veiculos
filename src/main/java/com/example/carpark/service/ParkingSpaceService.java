@@ -32,13 +32,15 @@ public class ParkingSpaceService {
 	}
 	
 	public ParkingSpace updateParkingSpace(Integer id, ParkingSpace body) {
-		ParkingSpace parkingSpace = getParkingSpaceById(id);
+		ParkingSpace existingParkingSpace = getParkingSpaceById(id);
 		boolean containsType = body.getType() != null;
 		boolean containsOccupied = body.getOccupied() != null;
-		body.setId(parkingSpace.getId());
-		body.setType(containsType ? body.getType() : parkingSpace.getType());
-		body.setPrice(containsType ? body.getType().getPrice() : parkingSpace.getType().getPrice());
-		body.setOccupied(containsOccupied ? body.getOccupied() : parkingSpace.getOccupied());
+		body.setId(existingParkingSpace.getId());
+		body.setType(containsType ? body.getType() : existingParkingSpace.getType());
+		body.setPrice(containsType ? 
+			body.getType().getPrice() : existingParkingSpace.getType().getPrice());
+		body.setOccupied(containsOccupied ? 
+			body.getOccupied() : existingParkingSpace.getOccupied());
 		return repo.saveAndFlush(body);
 	}
 	

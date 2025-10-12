@@ -36,13 +36,19 @@ public class OwnerService {
 	}
 	
 	public Owner updateOwner(Long id, Owner body) {
-		Owner owner = getOwnerById(id);
+		Owner existingOwner = getOwnerById(id);
 		boolean containsFullName = body.getFullName() != null;
 		boolean containsDriversLicense = body.getDriversLicense() != null;
-		body.setId(owner.getId());
-		body.setFullName(containsFullName ? body.getFullName() : owner.getFullName());
+		boolean duplicatedDriversLicense = containsDriversLicense && 
+			repo.existsByDriversLicense(body.getDriversLicense());
+		if(duplicatedDriversLicense) {
+			String driversLicense = body.getDriversLicense();
+			throw new ResourceAlreadyExistsException("The owner with drivers license "+driversLicense+" already exists");
+		}
+		body.setId(existingOwner.getId());
+		body.setFullName(containsFullName ? body.getFullName() : existingOwner.getFullName());
 		body.setDriversLicense(containsDriversLicense ? 
-			body.getDriversLicense() : owner.getDriversLicense());
+			body.getDriversLicense() : existingOwner.getDriversLicense());
 		return repo.saveAndFlush(body);
 	}
 	
