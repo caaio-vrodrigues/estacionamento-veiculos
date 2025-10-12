@@ -29,22 +29,22 @@ public class ParkingSpaceRentalService {
 	private final VehicleOwnershipService vehicleOwnershipService;
 	
 	public ParkingSpaceRental createParkingSpaceRental(ParkingSpaceRental body) {
-		ParkingSpace parkingSpace = parkingSpaceService
+		ParkingSpace newParkingSpace = parkingSpaceService
 			.getParkingSpaceById(body.getParkingSpace().getId());
-		boolean isParkingSpaceOccupied = parkingSpace.getOccupied().booleanValue();
-		if(isParkingSpaceOccupied) throw new OccupiedParkingSpaceException("Occupied parking space");
-		VehicleOwnership vehicleOwnership = vehicleOwnershipService
+		boolean isNewParkingSpaceOccupied = newParkingSpace.getOccupied().booleanValue();
+		if(isNewParkingSpaceOccupied) throw new OccupiedParkingSpaceException("Occupied parking space");
+		VehicleOwnership newVehicleOwnership = vehicleOwnershipService
 			.getVehicleOwnershipById(body.getVehicleOwnership().getId());
-		boolean isParkingSpaceCompatible = parkingSpace.getType() == 
-			vehicleOwnership.getVehicle().getType();
-		if(!isParkingSpaceCompatible)
+		boolean isNewParkingSpaceAndNewVehicleCompatible = newParkingSpace.getType() == 
+			newVehicleOwnership.getVehicle().getType();
+		if(!isNewParkingSpaceAndNewVehicleCompatible)
 			throw new IncompatibleParkingSpaceException("Incompatible parking space");
-		List<ParkingSpaceRental> parkingSpaceRentalList = repo
-			.findAllByVehicleOwnership(vehicleOwnership);
-		String incomingVehiclePlaque = vehicleOwnership.getVehicle().getPlaque();
-		parkingSpaceRentalList.forEach(parkingSpaceRental -> {
-			boolean isOccupied = parkingSpaceRental.getParkingSpace().getOccupied().booleanValue();
-			if(isOccupied) {
+		List<ParkingSpaceRental> existingParkingSpaceRentalByVehicleOwnershipList = repo
+			.findAllByVehicleOwnership(newVehicleOwnership);
+		String incomingVehiclePlaque = newVehicleOwnership.getVehicle().getPlaque();
+		existingParkingSpaceRentalByVehicleOwnershipList.forEach(parkingSpaceRental -> {
+			boolean isOpenRent = parkingSpaceRental.getEndRenting() == null;
+			if(isOpenRent) {
 				String existingVehiclePlaque = parkingSpaceRental
 					.getVehicleOwnership().getVehicle().getPlaque();
 				boolean samePlaque = Objects.equals(existingVehiclePlaque, incomingVehiclePlaque);
@@ -52,10 +52,10 @@ public class ParkingSpaceRentalService {
 					throw new ResourceAlreadyExistsException("The vehicle with plaque "+incomingVehiclePlaque+" is already in the parking space");
 			}
 		});
-		parkingSpace.setOccupied(true);
+		newParkingSpace.setOccupied(true);
 		body.setStartRenting(LocalDateTime.now());
-		body.setParkingSpace(parkingSpace);
-		body.setVehicleOwnership(vehicleOwnership);
+		body.setParkingSpace(newParkingSpace);
+		body.setVehicleOwnership(newVehicleOwnership);
 		return repo.saveAndFlush(body);
 	}
 	
