@@ -16,6 +16,7 @@ import com.example.carpark.infrastructure.entity.ParkingSpace;
 import com.example.carpark.infrastructure.entity.ParkingSpaceRental;
 import com.example.carpark.infrastructure.entity.VehicleOwnership;
 import com.example.carpark.infrastructure.repository.ParkingSpaceRentalRepository;
+import com.example.carpark.infrastructure.repository.VehicleOwnershipRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -68,41 +69,56 @@ public class ParkingSpaceRentalService {
 	}
 	
 	public ParkingSpaceRental updateParkingSpaceRental(Long id, ParkingSpaceRental body){
-		ParkingSpaceRental parkingSpaceRental = getParkingSpaceRentalById(id);
-		Integer definedParkingSpace = parkingSpaceRental.getParkingSpace().getId();
-		Integer newParkingSpace = body.getParkingSpace().getId();
-		boolean isSameParkingSpace = Objects.equals(definedParkingSpace, newParkingSpace);
 		boolean containsVehicleOwnership = body.getVehicleOwnership() != null;
 		boolean containsStartRenting = body.getStartRenting() != null;
 		boolean containsEndRenting = body.getEndRenting() != null;
 		boolean containsTotalRent = body.getTotalRent() != null;
-		VehicleOwnership vehicleOwner = vehicleOwnershipService
-			.getVehicleOwnershipById(containsVehicleOwnership ? 
-				body.getVehicleOwnership().getId() : parkingSpaceRental.getVehicleOwnership().getId());
-		body.setId(parkingSpaceRental.getId());
+		ParkingSpaceRental existingparkingSpaceRental = getParkingSpaceRentalById(id);
+		ParkingSpace usingParkingSpace = parkingSpaceService
+				.getParkingSpaceById(existingparkingSpaceRental.getParkingSpace().getId());
+		if(containsVehicleOwnership) {
+			VehicleOwnership vehicleOwnership = vehicleOwnershipService
+				.getVehicleOwnershipById(body.getVehicleOwnership().getId());
+			List<ParkingSpaceRental> vehicleOwnershipList = repo
+				.findAllByVehicleOwnership(vehicleOwnership);
+			vehicleOwnershipList.forEach(vehicleOwner -> {
+				if(vehicleOwner.getEndRenting() == null) {
+					String vehiclePlaque = vehicleOwner
+						.getVehicleOwnership().getVehicle().getPlaque();
+					throw new ResourceAlreadyExistsException("The vehicle with plaque "+vehiclePlaque+" is already in the parking space");
+				}
+			});
+			body.setVehicleOwnership(vehicleOwnership);
+		}
+		if(!containsVehicleOwnership) {
+			VehicleOwnership vehicleOwnership = vehicleOwnershipService
+				.getVehicleOwnershipById(existingparkingSpaceRental.getVehicleOwnership().getId());
+			body.setVehicleOwnership(vehicleOwnership);
+		}
+		if(body.getParkingSpace() != null) {
+			Integer newParkingSpaceId = body.getParkingSpace().getId();
+			boolean isSameParkingSpace = Objects.equals(usingParkingSpace.getId(), newParkingSpaceId);
+			if(isSameParkingSpace) body.setParkingSpace(usingParkingSpace);
+			if(!isSameParkingSpace){
+				ParkingSpace newParkingSpace = parkingSpaceService
+					.getParkingSpaceById(body.getParkingSpace().getId());
+				boolean isOccupied = newParkingSpace.getOccupied() == true;
+				boolean isSameType = usingParkingSpace.getType() == newParkingSpace.getType();
+				if(isOccupied) throw new OccupiedParkingSpaceException("Occupied parking space");
+				if(!isSameType) throw new IncompatibleParkingSpaceException("Incompatible parking space");
+				existingparkingSpaceRental.getParkingSpace().setOccupied(false);
+				usingParkingSpace.setOccupied(true);
+				body.setParkingSpace(newParkingSpace);
+			}
+		}
+		if(body.getParkingSpace() == null) body.setParkingSpace(usingParkingSpace);
+		body.setId(existingparkingSpaceRental.getId());
 		body.setStartRenting(containsStartRenting ? body.getStartRenting() :
-			parkingSpaceRental.getStartRenting());
+			existingparkingSpaceRental.getStartRenting());
 		body.setEndRenting(containsEndRenting ? body.getEndRenting() :
-			parkingSpaceRental.getEndRenting());
+			existingparkingSpaceRental.getEndRenting());
 		body.setTotalRent(containsTotalRent ? body.getTotalRent() : 
-			parkingSpaceRental.getTotalRent());
-		body.setVehicleOwnership(vehicleOwner);
-		if(isSameParkingSpace) {
-			ParkingSpace parkingSpace = parkingSpaceService
-				.getParkingSpaceById(parkingSpaceRental.getParkingSpace().getId());
-			body.setParkingSpace(parkingSpace);
-		}
-		if(!isSameParkingSpace){
-			ParkingSpace parkingSpace = parkingSpaceService
-				.getParkingSpaceById(body.getParkingSpace().getId());
-			boolean isOccupied = parkingSpace.getOccupied();
-			boolean isSameType = parkingSpace.getType() == vehicleOwner.getVehicle().getType();
-			if(isOccupied) throw new OccupiedParkingSpaceException("Occupied parking space");
-			if(!isSameType) throw new IncompatibleParkingSpaceException("Incompatible parking space");
-			parkingSpaceRental.getParkingSpace().setOccupied(false);
-			parkingSpace.setOccupied(true);
-			body.setParkingSpace(parkingSpace);
-		}
+			existingparkingSpaceRental.getTotalRent());
 		return repo.saveAndFlush(body);
 	}
 	

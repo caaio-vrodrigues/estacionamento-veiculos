@@ -54,6 +54,13 @@ public class VehicleOwnershipService {
 			body.getOwner().getId() : vehicleOwnership.getOwner().getId());
 		Vehicle vehicle = vehicleService.getVehicleById(containsVehicle ? 
 			body.getVehicle().getId() : vehicleOwnership.getVehicle().getId());
+		List<VehicleOwnership> vehicleOwnershipList = repo.findAllByOwner(owner);
+		vehicleOwnershipList.forEach(vehicleOwner -> {
+			String existingVehiclePlaque = vehicleOwner.getVehicle().getPlaque();
+			String newVehiclePlaque = vehicle.getPlaque();
+			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque);
+			if(samePlaque) throw new ResourceAlreadyExistsException("The client already exists");
+		});
 		body.setId(vehicleOwnership.getId());
 		body.setOwner(owner);
 		body.setVehicle(vehicle);
