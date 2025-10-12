@@ -36,17 +36,20 @@ public class VehicleService {
 	}
 	
 	public Vehicle updateVehicle(Long id, Vehicle body) {
-		Vehicle vehicle = getVehicleById(id);
+		Vehicle existingVehicle = getVehicleById(id);
 		boolean containsPlaque = body.getPlaque() != null;
+		boolean vehicleAlreadyExistsByPlaque = containsPlaque && repo.existsByPlaque(body.getPlaque());
+		if(vehicleAlreadyExistsByPlaque) 
+			throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
 		boolean containsModel = body.getModel() != null;
 		boolean containsBrand = body.getBrand() != null;
 		boolean containsType = body.getType() != null;
-		body.setId(vehicle.getId());
-		body.setPlaque(containsPlaque ? body.getPlaque() : vehicle.getPlaque());
-		body.setModel(containsModel ? body.getModel() : vehicle.getModel());
-		body.setType(containsType ? body.getType() : vehicle.getType());
-		body.setBrand(containsBrand ? body.getBrand() : vehicle.getBrand());
-		body.setCountry(containsBrand ? body.getBrand().getCountry() : vehicle.getCountry());
+		body.setId(existingVehicle.getId());
+		body.setPlaque(containsPlaque ? body.getPlaque() : existingVehicle.getPlaque());
+		body.setModel(containsModel ? body.getModel() : existingVehicle.getModel());
+		body.setType(containsType ? body.getType() : existingVehicle.getType());
+		body.setBrand(containsBrand ? body.getBrand() : existingVehicle.getBrand());
+		body.setCountry(containsBrand ? body.getBrand().getCountry() : existingVehicle.getCountry());
 		return repo.saveAndFlush(body);
 	}
 	
