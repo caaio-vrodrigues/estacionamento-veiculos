@@ -9,6 +9,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,18 +30,22 @@ public class Vehicle {
 	private Long id;
 	
 	@Column(name="model", nullable=false)
+	@NotBlank @NotEmpty
 	private String model;
 	
 	@Column(name="brand", nullable=false)
+	@NotNull
 	private VehicleBrand brand;
 	
 	@Column(name="country", nullable=false)
 	private String country;
 	
 	@Column(name="plaque", nullable=false, unique=true)
+	@NotBlank @NotEmpty
 	private String plaque;
 	
 	@Column(name="type", nullable=false)
+	@NotNull
 	private ParkingSpacePrice type;
 }
 	

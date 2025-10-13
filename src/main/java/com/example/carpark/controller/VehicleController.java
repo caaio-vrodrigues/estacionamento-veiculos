@@ -3,6 +3,7 @@ package com.example.carpark.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,18 +16,21 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.carpark.infrastructure.entity.Vehicle;
 import com.example.carpark.service.VehicleService;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/vehicle")
+@Validated
 public class VehicleController {
 	
 	private final VehicleService service;
 	
 	@PostMapping
 	public ResponseEntity<Vehicle> newVehicle(
-		@RequestBody Vehicle vehicle
+		@Valid @RequestBody Vehicle vehicle
 	){
 		return ResponseEntity.ok(service.createVehicle(vehicle));
 	}
@@ -38,22 +42,22 @@ public class VehicleController {
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<Vehicle> searchVehicleById(
-		@PathVariable Long id
+		@PathVariable @Min(1) Long id
 	){
 		return ResponseEntity.ok(service.getVehicleById(id));
 	}
 	
 	@PutMapping("/{id}")
 	public ResponseEntity<Vehicle> editVehicle(
-		@PathVariable Long id,
-		@RequestBody Vehicle body
+		@PathVariable @Min(1) Long id,
+		@Valid @RequestBody Vehicle body
 	){
 		return ResponseEntity.ok(service.updateVehicle(id, body));
 	}
 	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Boolean> excludeVehicle(
-		@PathVariable Long id
+		@PathVariable @Min(1) Long id
 	){
 		return ResponseEntity.ok(service.deleteVehicle(id));
 	}

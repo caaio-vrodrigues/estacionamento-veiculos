@@ -3,6 +3,7 @@ package com.example.carpark.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,18 +16,21 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.carpark.infrastructure.entity.ParkingSpaceRental;
 import com.example.carpark.service.ParkingSpaceRentalService;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/parkingspace-rental")
+@Validated
 public class ParkingSpaceRentalController {
 
 	private final ParkingSpaceRentalService service;
 	
 	@PostMapping
 	public ResponseEntity<ParkingSpaceRental> newParkingSpaceRental(
-		@RequestBody ParkingSpaceRental parkingSpaceRental
+		@Valid @RequestBody ParkingSpaceRental parkingSpaceRental
 	){
 		return ResponseEntity.ok(service
 			.createParkingSpaceRental(parkingSpaceRental));
@@ -39,14 +43,14 @@ public class ParkingSpaceRentalController {
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<ParkingSpaceRental> searchParkingSpaceRentalById(
-		@PathVariable Long id
+		@PathVariable @Min(1) Long id
 	){
 		return ResponseEntity.ok(service.getParkingSpaceRentalById(id));
 	}
 	
 	@PutMapping("/{id}")
 	public ResponseEntity<ParkingSpaceRental> editParkingSpaceRental(
-		@PathVariable Long id,
+		@PathVariable @Min(1) Long id,
 		@RequestBody ParkingSpaceRental body
 	){
 		return ResponseEntity.ok(service.updateParkingSpaceRental(id, body));
@@ -54,14 +58,14 @@ public class ParkingSpaceRentalController {
 	
 	@PutMapping("end-rental/{id}")
 	public ResponseEntity<ParkingSpaceRental> finalizeRental(
-		@PathVariable Long id
+		@PathVariable @Min(1) Long id
 	){
 		return ResponseEntity.ok(service.endParkingSpaceRental(id));
 	}
 	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Boolean> excludeParkingSpaceRental(
-		@PathVariable Long id
+		@PathVariable @Min(1) Long id
 	){
 		return ResponseEntity.ok(service.deleteParkingSpaceRental(id));
 	}

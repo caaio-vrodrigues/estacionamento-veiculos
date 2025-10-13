@@ -3,6 +3,7 @@ package com.example.carpark.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,11 +17,13 @@ import com.example.carpark.infrastructure.entity.Owner;
 import com.example.carpark.service.OwnerService;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/owner")
+@Validated
 public class OwnerController {
 
 	private final OwnerService service;
@@ -39,22 +42,22 @@ public class OwnerController {
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<Owner> searchOwnerById(
-		@PathVariable Long id
+		@PathVariable @Min(1) Long id
 	){
 		return ResponseEntity.ok(service.getOwnerById(id));
 	}
 	
 	@PutMapping("/{id}")
 	public ResponseEntity<Owner> editOwner(
-		@PathVariable Long id,
-		@RequestBody Owner body
+		@PathVariable @Min(1) Long id,
+		@Valid @RequestBody Owner body
 	){
 		return ResponseEntity.ok(service.updateOwner(id, body));
 	}
 	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Boolean> excludeOwner(
-		@PathVariable Long id
+		@PathVariable @Min(1) Long id
 	){
 		return ResponseEntity.ok(service.deleteOwner(id));
 	}
