@@ -5,6 +5,7 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
+import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.infrastructure.entity.Owner;
@@ -23,6 +24,8 @@ public class VehicleOwnershipService {
 	private final VehicleService vehicleService;
 	
 	public VehicleOwnership createVehicleOwnership(VehicleOwnership body) {
+		boolean missingField = body.getVehicle() == null || body.getOwner() == null;
+		if(missingField) throw new MissingRequiredFieldException("Incomplete fields in the request");
 		Owner owner = ownerService.getOwnerById(body.getOwner().getId());
 		Vehicle vehicle = vehicleService.getVehicleById(body.getVehicle().getId());
 		List<VehicleOwnership> vehicleOwnershipList = repo.findAllByOwner(owner);
@@ -30,7 +33,7 @@ public class VehicleOwnershipService {
 			String existingVehiclePlaque = vehicleOwnership.getVehicle().getPlaque();
 			String newVehiclePlaque = vehicle.getPlaque();
 			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque);
-			if(samePlaque) throw new ResourceAlreadyExistsException("The client already exists");
+			if(samePlaque) throw new ResourceAlreadyExistsException("The owner already possesses this vehicle with plaque: "+vehicle.getPlaque());
 		});
 		body.setOwner(owner);
 		body.setVehicle(vehicle);
@@ -58,8 +61,9 @@ public class VehicleOwnershipService {
 		vehicleOwnershipList.forEach(vehicleOwner -> {
 			String existingVehiclePlaque = vehicleOwner.getVehicle().getPlaque();
 			String newVehiclePlaque = vehicle.getPlaque();
-			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque);
-			if(samePlaque) throw new ResourceAlreadyExistsException("The client already exists");
+			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque) && 
+				!vehicleOwnership.getVehicle().getPlaque().equals(vehicle.getPlaque());
+			if(samePlaque) throw new ResourceAlreadyExistsException("The owner already possesses this vehicle with plaque: "+vehicle.getPlaque());
 		});
 		body.setId(vehicleOwnership.getId());
 		body.setOwner(owner);

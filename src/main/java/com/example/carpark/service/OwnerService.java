@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.infrastructure.entity.Owner;
@@ -18,6 +19,8 @@ public class OwnerService {
 	private final OwnerRepository repo;
 	
 	public Owner createOwner(Owner body) {
+		boolean missingField = body.getDriversLicense() == null || body.getFullName() == null;
+		if(missingField) throw new MissingRequiredFieldException("Incomplete fields in the request");
 		boolean existingDriversLisence = repo.existsByDriversLicense(body.getDriversLicense());
 		if(existingDriversLisence) {
 			String driversLicense = body.getDriversLicense();
@@ -40,7 +43,8 @@ public class OwnerService {
 		boolean containsFullName = body.getFullName() != null;
 		boolean containsDriversLicense = body.getDriversLicense() != null;
 		boolean duplicatedDriversLicense = containsDriversLicense && 
-			repo.existsByDriversLicense(body.getDriversLicense());
+			repo.existsByDriversLicense(body.getDriversLicense()) && 
+			!existingOwner.getDriversLicense().equals(body.getDriversLicense());
 		if(duplicatedDriversLicense) {
 			String driversLicense = body.getDriversLicense();
 			throw new ResourceAlreadyExistsException("The owner with drivers license "+driversLicense+" already exists");

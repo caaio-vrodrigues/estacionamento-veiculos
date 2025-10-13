@@ -3,6 +3,7 @@ package com.example.carpark.infrastructure.entity;
 import com.example.carpark.domain.ParkingSpacePrice;
 import com.example.carpark.domain.VehicleBrand;
 
+import io.micrometer.common.lang.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -38,6 +39,7 @@ public class Vehicle {
 	private VehicleBrand brand;
 	
 	@Column(name="country", nullable=false)
+	@Nullable
 	private String country;
 	
 	@Column(name="plaque", nullable=false, unique=true)

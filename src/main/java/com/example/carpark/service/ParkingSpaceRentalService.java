@@ -9,6 +9,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 
 import com.example.carpark.customexception.IncompatibleParkingSpaceException;
+import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.OccupiedParkingSpaceException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
@@ -29,6 +30,8 @@ public class ParkingSpaceRentalService {
 	private final VehicleOwnershipService vehicleOwnershipService;
 	
 	public ParkingSpaceRental createParkingSpaceRental(ParkingSpaceRental body) {
+		boolean missingField = body.getVehicleOwnership() == null || body.getParkingSpace() == null;
+		if(missingField) throw new MissingRequiredFieldException("Incomplete fields in the request");
 		ParkingSpace newParkingSpace = parkingSpaceService
 			.getParkingSpaceById(body.getParkingSpace().getId());
 		boolean isNewParkingSpaceOccupied = newParkingSpace.getOccupied().booleanValue();
@@ -44,15 +47,10 @@ public class ParkingSpaceRentalService {
 		String incomingVehiclePlaque = newVehicleOwnership.getVehicle().getPlaque();
 		existingParkingSpaceRentalListByVehicleOwnership.forEach(parkingSpaceRental -> {
 			boolean isOpenRent = parkingSpaceRental.getEndRenting() == null;
-			if(isOpenRent) {
-				String existingVehiclePlaque = parkingSpaceRental
-					.getVehicleOwnership().getVehicle().getPlaque();
-				boolean samePlaque = Objects.equals(existingVehiclePlaque, incomingVehiclePlaque);
-				if(samePlaque) 
-					throw new ResourceAlreadyExistsException("The vehicle with plaque "+incomingVehiclePlaque+" is already in the parking space");
-			}
+			if(isOpenRent) throw new ResourceAlreadyExistsException("The vehicle with plaque "+incomingVehiclePlaque+" is already in the parking space");
 		});
 		newParkingSpace.setOccupied(true);
+		parkingSpaceService.updateParkingSpace(newParkingSpace.getId(), newParkingSpace);
 		body.setStartRenting(LocalDateTime.now());
 		body.setParkingSpace(newParkingSpace);
 		body.setVehicleOwnership(newVehicleOwnership);
@@ -105,6 +103,9 @@ public class ParkingSpaceRentalService {
 		if(!existingParkingSpaceRental) throw new ResourceNotFoundException("No resource found with id: "+id);
 		ParkingSpaceRental parkingSpaceRental = getParkingSpaceRentalById(id);
 		parkingSpaceRental.getParkingSpace().setOccupied(false);
+		parkingSpaceService.updateParkingSpace(
+			parkingSpaceRental.getParkingSpace().getId(), 
+			parkingSpaceRental.getParkingSpace());
 		repo.deleteById(id);
 		return true;
 	}
@@ -113,6 +114,9 @@ public class ParkingSpaceRentalService {
 		ParkingSpaceRental parkingSpaceRental = getParkingSpaceRentalById(id);
 		parkingSpaceRental.setEndRenting(LocalDateTime.now());
 		parkingSpaceRental.getParkingSpace().setOccupied(false);
+		parkingSpaceService.updateParkingSpace(
+			parkingSpaceRental.getParkingSpace().getId(), 
+			parkingSpaceRental.getParkingSpace());
 		LocalDateTime startRenting = parkingSpaceRental.getStartRenting();
 		LocalDateTime endRenting = parkingSpaceRental.getEndRenting();
 		BigDecimal durationInHours = new BigDecimal(Duration

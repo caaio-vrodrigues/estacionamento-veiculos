@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.infrastructure.entity.ParkingSpace;
 import com.example.carpark.infrastructure.repository.ParkingSpaceRepository;
@@ -17,6 +18,8 @@ public class ParkingSpaceService {
 	private final ParkingSpaceRepository repo;
 	
 	public ParkingSpace createParkingSpace(ParkingSpace body) {
+		boolean missingField = body.getType() == null;
+		if(missingField) throw new MissingRequiredFieldException("Incomplete fields in the request");
 		body.setPrice(body.getType().getPrice());
 		body.setOccupied(false);
 		return repo.saveAndFlush(body);

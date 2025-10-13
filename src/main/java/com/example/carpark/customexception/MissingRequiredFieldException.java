@@ -1,0 +1,10 @@
+package com.example.carpark.customexception;
+
+public class MissingRequiredFieldException extends RuntimeException{
+	
+	private static final long serialVersionUID = 1L;
+
+	public MissingRequiredFieldException(String msg) {
+		super(msg);
+	}
+}

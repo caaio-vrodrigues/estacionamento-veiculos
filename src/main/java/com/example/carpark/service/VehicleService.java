@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.infrastructure.entity.Vehicle;
@@ -18,10 +19,12 @@ public class VehicleService {
 	private final VehicleRepository repo;
 	
 	public Vehicle createVehicle(Vehicle body) {
+		boolean missingField = body.getBrand() == null || body.getModel() == null || 
+			body.getPlaque() == null || body.getType() == null;
+		if(missingField) throw new MissingRequiredFieldException("Incomplete fields in the request");
 		boolean existingVehiclePlaque = repo.existsByPlaque(body.getPlaque());
-		if(existingVehiclePlaque)
+		if(existingVehiclePlaque) 
 			throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
-		body.setBrand(body.getBrand());
 		body.setCountry(body.getBrand().getCountry());
 		return repo.saveAndFlush(body);
 	}
@@ -38,7 +41,8 @@ public class VehicleService {
 	public Vehicle updateVehicle(Long id, Vehicle body) {
 		Vehicle existingVehicle = getVehicleById(id);
 		boolean containsPlaque = body.getPlaque() != null;
-		boolean vehicleAlreadyExistsByPlaque = containsPlaque && repo.existsByPlaque(body.getPlaque());
+		boolean vehicleAlreadyExistsByPlaque = containsPlaque && 
+			repo.existsByPlaque(body.getPlaque()) && body.getPlaque() != existingVehicle.getPlaque();
 		if(vehicleAlreadyExistsByPlaque) 
 			throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
 		boolean containsModel = body.getModel() != null;

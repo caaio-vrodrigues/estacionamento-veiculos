@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.example.carpark.customexception.IncompatibleParkingSpaceException;
+import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.OccupiedParkingSpaceException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
@@ -43,7 +44,7 @@ public class ExceptionHandlerController {
 		Map<String, String> fieldErrors = new HashMap<>();
 		body.put(TIME_STAMP, LocalDateTime.now());
 		body.put(STATUS, HttpStatus.BAD_REQUEST.value());
-		body.put(ERROR, "Validation Failed.");
+		body.put(ERROR, HttpStatus.BAD_REQUEST.getReasonPhrase());
 		body.put(MESSAGE, "One or more fields in the request body failed validation.");
 		body.put(PATH, request.getRequestURI());
 		e.getBindingResult().getAllErrors().forEach(error -> {
@@ -70,7 +71,7 @@ public class ExceptionHandlerController {
 		Map<String, String> fieldErrors = new HashMap<>();
 		body.put(TIME_STAMP, LocalDateTime.now());
 		body.put(STATUS, HttpStatus.BAD_REQUEST.value());
-		body.put(ERROR, "Bad Request");
+		body.put(ERROR, HttpStatus.BAD_REQUEST.getReasonPhrase());
 		body.put(MESSAGE, "Validation failed for method parameters");
 		body.put(PATH, request.getRequestURI());
 		 e.getConstraintViolations().forEach(violation -> {
@@ -94,7 +95,7 @@ public class ExceptionHandlerController {
 		Map<String, String> fieldErrors = new HashMap<>();
 		body.put(TIME_STAMP, LocalDateTime.now());
 		body.put(STATUS, HttpStatus.BAD_REQUEST.value());
-		body.put(ERROR, "Bad Request");
+		body.put(ERROR, HttpStatus.BAD_REQUEST.getReasonPhrase());
 		String topLevelMessage = "Failed to process request body. Please check your data.";
 		String detailValue = "An unexpected error occurred during request body parsing.";
 		String detailKey = "requestbody";
@@ -135,7 +136,7 @@ public class ExceptionHandlerController {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put(TIME_STAMP, LocalDateTime.now());
         body.put(STATUS, HttpStatus.NOT_FOUND.value());
-        body.put(ERROR, "Not Found");
+        body.put(ERROR, HttpStatus.NOT_FOUND.getReasonPhrase());
         body.put(MESSAGE, e.getMessage());
         body.put(PATH, request.getRequestURI());
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
@@ -150,7 +151,7 @@ public class ExceptionHandlerController {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put(TIME_STAMP, LocalDateTime.now());
         body.put(STATUS, HttpStatus.CONFLICT.value());
-        body.put(ERROR, "Resource Conflict");
+        body.put(ERROR, HttpStatus.CONFLICT.getReasonPhrase());
         body.put(MESSAGE, e.getMessage());
         body.put(PATH, request.getRequestURI());
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
@@ -165,7 +166,7 @@ public class ExceptionHandlerController {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put(TIME_STAMP, LocalDateTime.now());
         body.put(STATUS, HttpStatus.UNPROCESSABLE_ENTITY.value());
-        body.put(ERROR, "Unprocessable Entity");
+        body.put(ERROR, HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase());
         body.put(MESSAGE, e.getMessage());
         body.put(PATH, request.getRequestURI());
         return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -180,9 +181,24 @@ public class ExceptionHandlerController {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put(TIME_STAMP, LocalDateTime.now());
         body.put(STATUS, HttpStatus.CONFLICT.value());
-        body.put(ERROR, "Conflict");
+        body.put(ERROR, HttpStatus.CONFLICT.getReasonPhrase());
         body.put(MESSAGE, e.getMessage());
         body.put(PATH, request.getRequestURI());
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+ 	
+ 	@ExceptionHandler(MissingRequiredFieldException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<Object> handleMissingRequiredFieldException(
+    	MissingRequiredFieldException e,
+    	HttpServletRequest request
+    ){
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put(TIME_STAMP, LocalDateTime.now());
+        body.put(STATUS, HttpStatus.BAD_REQUEST.value());
+        body.put(ERROR, HttpStatus.BAD_REQUEST.getReasonPhrase());
+        body.put(MESSAGE, e.getMessage());
+        body.put(PATH, request.getRequestURI());
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 }
