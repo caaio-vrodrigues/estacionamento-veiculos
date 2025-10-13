@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.carpark.infrastructure.entity.Owner;
 import com.example.carpark.service.OwnerService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -26,7 +27,7 @@ public class OwnerController {
 	
 	@PostMapping
 	public ResponseEntity<Owner> newOwner(
-		@RequestBody Owner owner
+		@Valid @RequestBody Owner owner
 	){
 		return ResponseEntity.ok(service.createOwner(owner));
 	}

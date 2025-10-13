@@ -39,10 +39,10 @@ public class ParkingSpaceRentalService {
 			newVehicleOwnership.getVehicle().getType();
 		if(!isNewParkingSpaceAndNewVehicleCompatible)
 			throw new IncompatibleParkingSpaceException("Incompatible parking space");
-		List<ParkingSpaceRental> existingParkingSpaceRentalByVehicleOwnershipList = repo
+		List<ParkingSpaceRental> existingParkingSpaceRentalListByVehicleOwnership = repo
 			.findAllByVehicleOwnership(newVehicleOwnership);
 		String incomingVehiclePlaque = newVehicleOwnership.getVehicle().getPlaque();
-		existingParkingSpaceRentalByVehicleOwnershipList.forEach(parkingSpaceRental -> {
+		existingParkingSpaceRentalListByVehicleOwnership.forEach(parkingSpaceRental -> {
 			boolean isOpenRent = parkingSpaceRental.getEndRenting() == null;
 			if(isOpenRent) {
 				String existingVehiclePlaque = parkingSpaceRental
