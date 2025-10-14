@@ -23,8 +23,7 @@ public class VehicleService {
 			body.getPlaque() == null || body.getType() == null;
 		if(missingField) throw new MissingRequiredFieldException("Incomplete fields in the request");
 		boolean existingVehiclePlaque = repo.existsByPlaque(body.getPlaque());
-		if(existingVehiclePlaque) 
-			throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
+		if(existingVehiclePlaque) throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
 		body.setCountry(body.getBrand().getCountry());
 		return repo.saveAndFlush(body);
 	}
@@ -34,17 +33,16 @@ public class VehicleService {
 	}
 	
 	public Vehicle getVehicleById(Long id) {
-		return repo.findById(id).orElseThrow(()->
-			new ResourceNotFoundException("No resource found with id: "+id));
+		return repo.findById(id).orElseThrow(()-> new ResourceNotFoundException("No resource found with id: "+id));
 	}
 	
 	public Vehicle updateVehicle(Long id, Vehicle body) {
 		Vehicle existingVehicle = getVehicleById(id);
 		boolean containsPlaque = body.getPlaque() != null;
 		boolean vehicleAlreadyExistsByPlaque = containsPlaque && 
-			repo.existsByPlaque(body.getPlaque()) && body.getPlaque() != existingVehicle.getPlaque();
-		if(vehicleAlreadyExistsByPlaque) 
-			throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
+			repo.existsByPlaque(body.getPlaque()) && 
+			!body.getPlaque().equals(existingVehicle.getPlaque());
+		if(vehicleAlreadyExistsByPlaque) throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
 		boolean containsModel = body.getModel() != null;
 		boolean containsBrand = body.getBrand() != null;
 		boolean containsType = body.getType() != null;

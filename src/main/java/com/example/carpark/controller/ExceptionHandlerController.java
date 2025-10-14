@@ -53,9 +53,7 @@ public class ExceptionHandlerController {
 	            String errorMessage = error.getDefaultMessage();
 	            fieldErrors.put(fieldName, errorMessage);
 	        }
-			else {
-				fieldErrors.put(error.getObjectName(), error.getDefaultMessage());
-			}
+			else fieldErrors.put(error.getObjectName(), error.getDefaultMessage());
 		});
 		body.put(DETAILS, fieldErrors);
 		return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
@@ -102,15 +100,14 @@ public class ExceptionHandlerController {
 		Throwable mostSpecificCause = e.getMostSpecificCause();
 		if(mostSpecificCause instanceof InvalidFormatException invalidFormatException) {
 		    detailValue = invalidFormatException.getOriginalMessage();
-		    boolean hasInvalidFormatPath = invalidFormatException.getPath() != null && 
+		    boolean hasInvalidFormatPath = invalidFormatException.getPath() != null &&
 		    	!invalidFormatException.getPath().isEmpty();
 		    if(hasInvalidFormatPath) {
-		    	String fieldName = invalidFormatException.getPath().get(invalidFormatException
-		    		.getPath().size() - 1).getFieldName();
+		    	String fieldName = invalidFormatException.getPath()
+		    		.get(invalidFormatException.getPath().size() - 1).getFieldName();
 			    if(fieldName != null) {
 			    	detailKey = fieldName;
-			    	topLevelMessage = String
-			    		.format("Invalid data provided for field '%s'.", fieldName);
+			    	topLevelMessage = String.format("Invalid data provided for field '%s'.", fieldName);
 			    } 
 			    if(fieldName == null) topLevelMessage = "JSON parsing error: Malformed structure.";
 		    } 

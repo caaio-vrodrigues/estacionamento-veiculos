@@ -45,8 +45,7 @@ public class VehicleOwnershipService {
 	}
 	
 	public VehicleOwnership getVehicleOwnershipById(Long id) {
-		return repo.findById(id).orElseThrow(()->
-			new ResourceNotFoundException("No ressource found with id: "+id));
+		return repo.findById(id).orElseThrow(()-> new ResourceNotFoundException("No ressource found with id: "+id));
 	}
 	
 	public VehicleOwnership updateVehicleOwnership(Long id, VehicleOwnership body) {
@@ -61,7 +60,7 @@ public class VehicleOwnershipService {
 		vehicleOwnershipList.forEach(vehicleOwner -> {
 			String existingVehiclePlaque = vehicleOwner.getVehicle().getPlaque();
 			String newVehiclePlaque = vehicle.getPlaque();
-			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque) && 
+			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque) &&
 				!vehicleOwnership.getVehicle().getPlaque().equals(vehicle.getPlaque());
 			if(samePlaque) throw new ResourceAlreadyExistsException("The owner already possesses this vehicle with plaque: "+vehicle.getPlaque());
 		});

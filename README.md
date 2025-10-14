@@ -148,7 +148,7 @@ Base: `/owner`
     *   **Corpo da Requisição**: `Owner` (JSON)
         ```json
         {
-            "fullName": "João da Silva",
+            "fullName": "Caio Vinicius Rodrigues",
             "driversLicense": "12345678900"
         }
         ```
@@ -172,7 +172,7 @@ Base: `/owner`
     *   **Corpo da Requisição**: `Owner` (JSON - apenas os campos a serem atualizados)
         ```json
         {
-            "fullName": "João da Silva Sauro",
+            "fullName": "Caio Vinicius Rodrigues",
             "driversLicense": "12345678901"
         }
         ```

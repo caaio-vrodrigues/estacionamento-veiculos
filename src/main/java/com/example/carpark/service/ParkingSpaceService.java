@@ -31,8 +31,7 @@ public class ParkingSpaceService {
 	}
 	
 	public ParkingSpace getParkingSpaceById(Integer id) {
-		return repo.findById(id).orElseThrow(()->
-			new ResourceNotFoundException("No resource found with id: "+id));
+		return repo.findById(id).orElseThrow(()-> new ResourceNotFoundException("No resource found with id: "+id));
 	}
 	
 	public ParkingSpace updateParkingSpace(Integer id, ParkingSpace body) {

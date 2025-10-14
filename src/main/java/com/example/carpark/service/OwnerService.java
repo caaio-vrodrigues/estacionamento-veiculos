@@ -4,9 +4,10 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
+import com.example.carpark.dto.owner.OwnerRequestDTO;
+import com.example.carpark.dto.owner.OwnerUpdateDTO;
 import com.example.carpark.infrastructure.entity.Owner;
 import com.example.carpark.infrastructure.repository.OwnerRepository;
 
@@ -18,15 +19,17 @@ public class OwnerService {
 
 	private final OwnerRepository repo;
 	
-	public Owner createOwner(Owner body) {
-		boolean missingField = body.getDriversLicense() == null || body.getFullName() == null;
-		if(missingField) throw new MissingRequiredFieldException("Incomplete fields in the request");
+	public Owner createOwner(OwnerRequestDTO body) {
 		boolean existingDriversLisence = repo.existsByDriversLicense(body.getDriversLicense());
 		if(existingDriversLisence) {
 			String driversLicense = body.getDriversLicense();
 			throw new ResourceAlreadyExistsException("The owner with drivers license "+driversLicense+" already exists");
 		}
-		return repo.saveAndFlush(body);
+		Owner newOwner = Owner.builder()
+			.fullName(body.getFullName())
+			.driversLicense(body.getDriversLicense())
+			.build();
+		return repo.saveAndFlush(newOwner);
 	}
 	
 	public List<Owner> getAllOwners(){
@@ -38,22 +41,20 @@ public class OwnerService {
 			new ResourceNotFoundException("No resource found with id: "+id));
 	}
 	
-	public Owner updateOwner(Long id, Owner body) {
+	public Owner updateOwner(Long id, OwnerUpdateDTO body) {
 		Owner existingOwner = getOwnerById(id);
-		boolean containsFullName = body.getFullName() != null;
-		boolean containsDriversLicense = body.getDriversLicense() != null;
-		boolean duplicatedDriversLicense = containsDriversLicense && 
-			repo.existsByDriversLicense(body.getDriversLicense()) && 
-			!existingOwner.getDriversLicense().equals(body.getDriversLicense());
-		if(duplicatedDriversLicense) {
-			String driversLicense = body.getDriversLicense();
-			throw new ResourceAlreadyExistsException("The owner with drivers license "+driversLicense+" already exists");
+		if (body.getFullName() != null)  existingOwner.setFullName(body.getFullName());
+		if (body.getDriversLicense() != null) {
+			boolean driversLicenseAlreadyExists = !existingOwner.getDriversLicense()
+			.equals(body.getDriversLicense()) && 
+			repo.existsByDriversLicense(body.getDriversLicense());
+				if (driversLicenseAlreadyExists) {
+				String driversLicense = body.getDriversLicense();
+				throw new ResourceAlreadyExistsException("The owner with drivers license "+driversLicense+" already exists");
+			}
+			existingOwner.setDriversLicense(body.getDriversLicense());
 		}
-		body.setId(existingOwner.getId());
-		body.setFullName(containsFullName ? body.getFullName() : existingOwner.getFullName());
-		body.setDriversLicense(containsDriversLicense ? 
-			body.getDriversLicense() : existingOwner.getDriversLicense());
-		return repo.saveAndFlush(body);
+		return repo.saveAndFlush(existingOwner);
 	}
 	
 	public boolean deleteOwner(Long id) {

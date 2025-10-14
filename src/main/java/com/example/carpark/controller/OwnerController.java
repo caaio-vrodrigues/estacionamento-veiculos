@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.carpark.dto.owner.OwnerRequestDTO;
+import com.example.carpark.dto.owner.OwnerUpdateDTO;
 import com.example.carpark.infrastructure.entity.Owner;
 import com.example.carpark.service.OwnerService;
 
@@ -30,7 +32,7 @@ public class OwnerController {
 	
 	@PostMapping
 	public ResponseEntity<Owner> newOwner(
-		@Valid @RequestBody Owner owner
+		@Valid @RequestBody OwnerRequestDTO owner
 	){
 		return ResponseEntity.ok(service.createOwner(owner));
 	}
@@ -50,7 +52,7 @@ public class OwnerController {
 	@PutMapping("/{id}")
 	public ResponseEntity<Owner> editOwner(
 		@PathVariable @Min(1) Long id,
-		@Valid @RequestBody Owner body
+		@Valid @RequestBody OwnerUpdateDTO body
 	){
 		return ResponseEntity.ok(service.updateOwner(id, body));
 	}

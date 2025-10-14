@@ -38,10 +38,9 @@ public class ParkingSpaceRentalService {
 		if(isNewParkingSpaceOccupied) throw new OccupiedParkingSpaceException("Occupied parking space");
 		VehicleOwnership newVehicleOwnership = vehicleOwnershipService
 			.getVehicleOwnershipById(body.getVehicleOwnership().getId());
-		boolean isNewParkingSpaceAndNewVehicleCompatible = newParkingSpace.getType() == 
+		boolean isNewParkingSpaceAndNewVehicleCompatible = newParkingSpace.getType() ==
 			newVehicleOwnership.getVehicle().getType();
-		if(!isNewParkingSpaceAndNewVehicleCompatible)
-			throw new IncompatibleParkingSpaceException("Incompatible parking space");
+		if(!isNewParkingSpaceAndNewVehicleCompatible) throw new IncompatibleParkingSpaceException("Incompatible parking space");
 		List<ParkingSpaceRental> existingParkingSpaceRentalListByVehicleOwnership = repo
 			.findAllByVehicleOwnership(newVehicleOwnership);
 		String incomingVehiclePlaque = newVehicleOwnership.getVehicle().getPlaque();
@@ -87,8 +86,7 @@ public class ParkingSpaceRentalService {
 			.getParkingSpace().getType() == vehicleOwnership.getVehicle().getType();
 		boolean incompatibleTypeOfParkinSpace = !isSameExistingParkingSpaceAndNewParkingSpaceType ||
 			!isSameExistingParkingSpaceAndNewVehicleType;
-		if(incompatibleTypeOfParkinSpace)
-			throw new IncompatibleParkingSpaceException("Incompatible parking space type");
+		if(incompatibleTypeOfParkinSpace) throw new IncompatibleParkingSpaceException("Incompatible parking space type");
 		body.setId(existingParkingSpaceRental.getId());
 		body.setStartRenting(containsStartRenting ? 
 			body.getStartRenting() : existingParkingSpaceRental.getStartRenting());

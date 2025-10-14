@@ -26,10 +26,8 @@ public class Owner {
 	private Long id;
 	
 	@Column(name="full_name", nullable=false)
-	@NotEmpty @NotBlank
 	private String fullName;
 	
 	@Column(name="drivers_license", nullable=false, unique=true)
-	@NotEmpty @NotBlank
 	private String driversLicense;
 }
