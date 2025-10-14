@@ -4,9 +4,13 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.example.carpark.customexception.MissingRequiredFieldException;
+import com.example.carpark.customexception.IncompatibleTypeOfVehicleException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
+import com.example.carpark.domain.ParkingSpacePrice;
+import com.example.carpark.domain.VehicleBrand;
+import com.example.carpark.dto.vehicle.VehicleRequestDTO;
+import com.example.carpark.dto.vehicle.VehicleUpdateDTO;
 import com.example.carpark.infrastructure.entity.Vehicle;
 import com.example.carpark.infrastructure.repository.VehicleRepository;
 
@@ -18,14 +22,17 @@ public class VehicleService {
 
 	private final VehicleRepository repo;
 	
-	public Vehicle createVehicle(Vehicle body) {
-		boolean missingField = body.getBrand() == null || body.getModel() == null || 
-			body.getPlaque() == null || body.getType() == null;
-		if(missingField) throw new MissingRequiredFieldException("Incomplete fields in the request");
+	public Vehicle createVehicle(VehicleRequestDTO  body) {
 		boolean existingVehiclePlaque = repo.existsByPlaque(body.getPlaque());
 		if(existingVehiclePlaque) throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
-		body.setCountry(body.getBrand().getCountry());
-		return repo.saveAndFlush(body);
+		Vehicle newVehicle = Vehicle.builder()
+			.model(body.getModel())
+			.brand(body.getBrand())
+			.plaque(body.getPlaque())
+			.type(body.getType())
+			.country(body.getBrand().getCountry())
+			.build();
+		return repo.saveAndFlush(newVehicle);
 	}
 	
 	public List<Vehicle> getAllVehicles(){
@@ -36,23 +43,27 @@ public class VehicleService {
 		return repo.findById(id).orElseThrow(()-> new ResourceNotFoundException("No resource found with id: "+id));
 	}
 	
-	public Vehicle updateVehicle(Long id, Vehicle body) {
+	public Vehicle updateVehicle(Long id, VehicleUpdateDTO body) {
 		Vehicle existingVehicle = getVehicleById(id);
-		boolean containsPlaque = body.getPlaque() != null;
-		boolean vehicleAlreadyExistsByPlaque = containsPlaque && 
-			repo.existsByPlaque(body.getPlaque()) && 
-			!body.getPlaque().equals(existingVehicle.getPlaque());
-		if(vehicleAlreadyExistsByPlaque) throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
-		boolean containsModel = body.getModel() != null;
-		boolean containsBrand = body.getBrand() != null;
-		boolean containsType = body.getType() != null;
-		body.setId(existingVehicle.getId());
-		body.setPlaque(containsPlaque ? body.getPlaque() : existingVehicle.getPlaque());
-		body.setModel(containsModel ? body.getModel() : existingVehicle.getModel());
-		body.setType(containsType ? body.getType() : existingVehicle.getType());
-		body.setBrand(containsBrand ? body.getBrand() : existingVehicle.getBrand());
-		body.setCountry(containsBrand ? body.getBrand().getCountry() : existingVehicle.getCountry());
-		return repo.saveAndFlush(body);
+		VehicleBrand potentialNewBrand = existingVehicle.getBrand();
+        if (body.getBrand() != null) potentialNewBrand = body.getBrand();
+        ParkingSpacePrice potentialNewType = existingVehicle.getType();
+        if (body.getType() != null) potentialNewType = body.getType();
+		boolean incompatibleType = potentialNewBrand.getType() != potentialNewType;
+        if (incompatibleType) throw new IncompatibleTypeOfVehicleException("The type of vehicle "+potentialNewType+" is not compatible with type "+potentialNewBrand.getType());
+        if(body.getBrand() != null) {
+            existingVehicle.setBrand(potentialNewBrand);
+            existingVehicle.setCountry(potentialNewBrand.getCountry());
+        }
+        if(body.getType() != null) existingVehicle.setType(potentialNewType);
+        if(body.getPlaque() != null) {
+            boolean vehiclePlaqueAlreadyExists = !existingVehicle.getPlaque()
+            	.equals(body.getPlaque()) && repo.existsByPlaque(body.getPlaque());
+            if (vehiclePlaqueAlreadyExists) throw new ResourceAlreadyExistsException("The vehicle with plaque "+body.getPlaque()+" already exists");
+            existingVehicle.setPlaque(body.getPlaque());
+        }
+        if(body.getModel() != null) existingVehicle.setModel(body.getModel());
+		return repo.saveAndFlush(existingVehicle);
 	}
 	
 	public boolean deleteVehicle(Long id) {

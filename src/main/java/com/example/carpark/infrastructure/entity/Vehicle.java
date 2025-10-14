@@ -31,11 +31,9 @@ public class Vehicle {
 	private Long id;
 	
 	@Column(name="model", nullable=false)
-	@NotBlank @NotEmpty
 	private String model;
 	
 	@Column(name="brand", nullable=false)
-	@NotNull
 	private VehicleBrand brand;
 	
 	@Column(name="country", nullable=false)
@@ -43,11 +41,9 @@ public class Vehicle {
 	private String country;
 	
 	@Column(name="plaque", nullable=false, unique=true)
-	@NotBlank @NotEmpty
 	private String plaque;
 	
 	@Column(name="type", nullable=false)
-	@NotNull
 	private ParkingSpacePrice type;
 }
 	

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.example.carpark.customexception.IncompatibleParkingSpaceException;
+import com.example.carpark.customexception.IncompatibleTypeOfVehicleException;
 import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.OccupiedParkingSpaceException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
@@ -197,5 +198,20 @@ public class ExceptionHandlerController {
         body.put(MESSAGE, e.getMessage());
         body.put(PATH, request.getRequestURI());
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+ 	
+ 	@ExceptionHandler(IncompatibleTypeOfVehicleException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ResponseEntity<Object> handleIncompatibleTypeOfVehicleException(
+    	IncompatibleTypeOfVehicleException e,
+    	HttpServletRequest request
+    ){
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put(TIME_STAMP, LocalDateTime.now());
+        body.put(STATUS, HttpStatus.UNPROCESSABLE_ENTITY.value());
+        body.put(ERROR, HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase());
+        body.put(MESSAGE, e.getMessage());
+        body.put(PATH, request.getRequestURI());
+        return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 }
