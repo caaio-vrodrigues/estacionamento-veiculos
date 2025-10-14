@@ -75,6 +75,9 @@ public class ParkingSpaceRentalService {
 		ParkingSpaceRental existingParkingSpaceRental = getParkingSpaceRentalById(id);
 		ParkingSpace parkingSpace = parkingSpaceService.getParkingSpaceById(containsParkingSpace ?
 			body.getParkingSpace().getId() : existingParkingSpaceRental.getParkingSpace().getId());
+		boolean occupiedParkingSpace = !existingParkingSpaceRental.getParkingSpace().getId().equals(
+			parkingSpace.getId()) && parkingSpace.getOccupied().booleanValue();
+		if(occupiedParkingSpace) throw new OccupiedParkingSpaceException("The parking space is already occupied");
 		VehicleOwnership vehicleOwnership = vehicleOwnershipService
 			.getVehicleOwnershipById(containsVehicleOwnership ? body.getVehicleOwnership().getId() :
 				existingParkingSpaceRental.getVehicleOwnership().getId());

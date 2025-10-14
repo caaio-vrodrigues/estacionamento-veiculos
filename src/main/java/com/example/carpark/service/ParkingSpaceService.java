@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.example.carpark.customexception.MissingRequiredFieldException;
+import com.example.carpark.customexception.OccupiedParkingSpaceException;
 import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.infrastructure.entity.ParkingSpace;
 import com.example.carpark.infrastructure.repository.ParkingSpaceRepository;
@@ -36,6 +37,7 @@ public class ParkingSpaceService {
 	
 	public ParkingSpace updateParkingSpace(Integer id, ParkingSpace body) {
 		ParkingSpace existingParkingSpace = getParkingSpaceById(id);
+		if(existingParkingSpace.getOccupied().booleanValue()) throw new OccupiedParkingSpaceException("It is not possible to change the type of parking space that is occupied");
 		boolean containsType = body.getType() != null;
 		boolean containsOccupied = body.getOccupied() != null;
 		body.setId(existingParkingSpace.getId());
