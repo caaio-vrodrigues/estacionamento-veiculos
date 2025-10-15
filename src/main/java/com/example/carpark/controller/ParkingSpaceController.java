@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.carpark.dto.parkingspace.ParkingSpaceRequestDTO;
+import com.example.carpark.dto.parkingspace.ParkingSpaceUpdateDTO;
 import com.example.carpark.infrastructure.entity.ParkingSpace;
 import com.example.carpark.service.ParkingSpaceService;
 
@@ -30,7 +32,7 @@ public class ParkingSpaceController {
 	
 	@PostMapping
 	public ResponseEntity<ParkingSpace> newParkingSpace(
-		@Valid @RequestBody ParkingSpace parkingSpace
+		@Valid @RequestBody ParkingSpaceRequestDTO parkingSpace
 	){
 		return ResponseEntity.ok(service.createParkingSpace(parkingSpace));
 	}
@@ -47,18 +49,25 @@ public class ParkingSpaceController {
 		return ResponseEntity.ok(service.getParkingSpaceById(id));
 	}
 	
-	@PutMapping("/{id}")
-	public ResponseEntity<ParkingSpace> editParkingSpace(
-		@PathVariable @Min(1) Integer id,
-		@Valid @RequestBody ParkingSpace body
+	@GetMapping("place/{placeId}")
+	public ResponseEntity<ParkingSpace> searchParkingSpaceById(
+		@PathVariable String placeId
 	){
-		return ResponseEntity.ok(service.updateParkingSpace(id, body));
+		return ResponseEntity.ok(service.getParkingSpaceByPlaceId(placeId));
 	}
 	
-	@DeleteMapping("/{id}")
-	public ResponseEntity<Boolean> excludeParkingSpace(
-		@PathVariable @Min(1) Integer id
+	@PutMapping("/{placeId}")
+	public ResponseEntity<ParkingSpace> editParkingSpace(
+		@PathVariable String placeId,
+		@Valid @RequestBody ParkingSpaceUpdateDTO body
 	){
-		return ResponseEntity.ok(service.deleteParkingSpace(id));
+		return ResponseEntity.ok(service.updateParkingSpace(placeId, body));
+	}
+	
+	@DeleteMapping("/{placeId}")
+	public ResponseEntity<Boolean> excludeParkingSpace(
+		@PathVariable String placeId
+	){
+		return ResponseEntity.ok(service.deleteParkingSpace(placeId));
 	}
 }

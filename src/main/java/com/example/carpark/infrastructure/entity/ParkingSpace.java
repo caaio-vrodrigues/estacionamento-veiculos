@@ -31,8 +31,10 @@ public class ParkingSpace {
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Integer id;
 	
+	@Column(name="place_id", nullable=false, unique=true)
+	private String placeId;
+	
 	@Column(name="type", nullable=false)
-	@NotNull
 	private ParkingSpacePrice type;
 	
 	@Column(name="price", nullable=false)

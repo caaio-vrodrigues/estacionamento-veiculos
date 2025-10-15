@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
@@ -13,11 +12,11 @@ import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.OccupiedParkingSpaceException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
+import com.example.carpark.dto.parkingspace.ParkingSpaceUpdateDTO;
 import com.example.carpark.infrastructure.entity.ParkingSpace;
 import com.example.carpark.infrastructure.entity.ParkingSpaceRental;
 import com.example.carpark.infrastructure.entity.VehicleOwnership;
 import com.example.carpark.infrastructure.repository.ParkingSpaceRentalRepository;
-import com.example.carpark.infrastructure.repository.VehicleOwnershipRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -49,7 +48,10 @@ public class ParkingSpaceRentalService {
 			if(isOpenRent) throw new ResourceAlreadyExistsException("The vehicle with plaque "+incomingVehiclePlaque+" is already in the parking space");
 		});
 		newParkingSpace.setOccupied(true);
-		parkingSpaceService.updateParkingSpace(newParkingSpace.getId(), newParkingSpace);
+		ParkingSpaceUpdateDTO parkingSpaceUpdateDTO = ParkingSpaceUpdateDTO.builder()
+			.type(newParkingSpace.getType())
+			.build();
+		parkingSpaceService.updateParkingSpace(newParkingSpace.getPlaceId(), parkingSpaceUpdateDTO);
 		body.setStartRenting(LocalDateTime.now());
 		body.setParkingSpace(newParkingSpace);
 		body.setVehicleOwnership(newVehicleOwnership);
@@ -103,21 +105,27 @@ public class ParkingSpaceRentalService {
 		boolean existingParkingSpaceRental = repo.existsById(id);
 		if(!existingParkingSpaceRental) throw new ResourceNotFoundException("No resource found with id: "+id);
 		ParkingSpaceRental parkingSpaceRental = getParkingSpaceRentalById(id);
+		ParkingSpaceUpdateDTO parkingSpaceRentalUpdateDTO = ParkingSpaceUpdateDTO.builder()
+			.type(parkingSpaceRental.getParkingSpace().getType())
+			.build();
 		parkingSpaceRental.getParkingSpace().setOccupied(false);
 		parkingSpaceService.updateParkingSpace(
-			parkingSpaceRental.getParkingSpace().getId(), 
-			parkingSpaceRental.getParkingSpace());
+			parkingSpaceRental.getParkingSpace().getPlaceId(), 
+			parkingSpaceRentalUpdateDTO);
 		repo.deleteById(id);
 		return true;
 	}
 	
 	public ParkingSpaceRental endParkingSpaceRental(Long id) {
 		ParkingSpaceRental parkingSpaceRental = getParkingSpaceRentalById(id);
+		ParkingSpaceUpdateDTO parkingSpaceRentalUpdateDTO = ParkingSpaceUpdateDTO.builder()
+			.type(parkingSpaceRental.getParkingSpace().getType())
+			.build();
 		parkingSpaceRental.setEndRenting(LocalDateTime.now());
 		parkingSpaceRental.getParkingSpace().setOccupied(false);
 		parkingSpaceService.updateParkingSpace(
-			parkingSpaceRental.getParkingSpace().getId(), 
-			parkingSpaceRental.getParkingSpace());
+			parkingSpaceRental.getParkingSpace().getPlaceId(), 
+			parkingSpaceRentalUpdateDTO);
 		LocalDateTime startRenting = parkingSpaceRental.getStartRenting();
 		LocalDateTime endRenting = parkingSpaceRental.getEndRenting();
 		BigDecimal durationInHours = new BigDecimal(Duration
