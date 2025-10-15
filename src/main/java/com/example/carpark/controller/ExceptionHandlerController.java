@@ -334,4 +334,19 @@ public class ExceptionHandlerController {
  	    body.put(PATH, request.getRequestURI());
  	    return new ResponseEntity<>(body, HttpStatus.METHOD_NOT_ALLOWED);
  	}
+ 	
+ 	@ExceptionHandler(Error.class)
+ 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+ 	public ResponseEntity<Object> handleError(
+ 		Error e,
+ 	    HttpServletRequest request
+ 	){
+ 	    Map<String, Object> body = new LinkedHashMap<>();
+ 	    body.put(TIME_STAMP, LocalDateTime.now());
+ 	    body.put(STATUS, HttpStatus.INTERNAL_SERVER_ERROR.value()); 
+ 	    body.put(ERROR, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+ 	    body.put(MESSAGE, "An unexpected internal server error occurred: "+e.getMessage());
+ 	    body.put(PATH, request.getRequestURI());
+ 	    return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+ 	}
 }

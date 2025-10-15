@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
+import com.example.carpark.dto.vehicleownership.VehicleOwnershipRequestDTO;
+import com.example.carpark.dto.vehicleownership.VehicleOwnershipUpdateDTO;
 import com.example.carpark.infrastructure.entity.Owner;
 import com.example.carpark.infrastructure.entity.Vehicle;
 import com.example.carpark.infrastructure.entity.VehicleOwnership;
@@ -23,9 +25,7 @@ public class VehicleOwnershipService {
 	private final OwnerService ownerService;
 	private final VehicleService vehicleService;
 	
-	public VehicleOwnership createVehicleOwnership(VehicleOwnership body) {
-		boolean missingField = body.getVehicle() == null || body.getOwner() == null;
-		if(missingField) throw new MissingRequiredFieldException("Incomplete fields in the request");
+	public VehicleOwnership createVehicleOwnership(VehicleOwnershipRequestDTO body) {
 		Owner owner = ownerService.getOwnerById(body.getOwner().getId());
 		Vehicle vehicle = vehicleService.getVehicleById(body.getVehicle().getId());
 		List<VehicleOwnership> vehicleOwnershipList = repo.findAllByOwner(owner);
@@ -35,9 +35,11 @@ public class VehicleOwnershipService {
 			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque);
 			if(samePlaque) throw new ResourceAlreadyExistsException("The owner already possesses this vehicle with plaque: "+vehicle.getPlaque());
 		});
-		body.setOwner(owner);
-		body.setVehicle(vehicle);
-		return repo.saveAndFlush(body);
+		VehicleOwnership newVehicleOwnership = VehicleOwnership.builder()
+			.vehicle(vehicle)
+			.owner(owner)
+			.build();
+		return repo.saveAndFlush(newVehicleOwnership);
 	}
 	
 	public List<VehicleOwnership> getAllVehicleOwnerships(){
@@ -45,29 +47,27 @@ public class VehicleOwnershipService {
 	}
 	
 	public VehicleOwnership getVehicleOwnershipById(Long id) {
-		return repo.findById(id).orElseThrow(()-> new ResourceNotFoundException("No ressource found with id: "+id));
+		return repo.findById(id).orElseThrow(() -> 
+			new ResourceNotFoundException("No ressource found with id: "+id));
 	}
 	
-	public VehicleOwnership updateVehicleOwnership(Long id, VehicleOwnership body) {
-		VehicleOwnership vehicleOwnership = getVehicleOwnershipById(id);
-		boolean containsOwner = body.getOwner() != null;
+	public VehicleOwnership updateVehicleOwnership(Long id, VehicleOwnershipUpdateDTO body) {
+		VehicleOwnership existingVehicleOwnership = getVehicleOwnershipById(id);
 		boolean containsVehicle = body.getVehicle() != null;
-		Owner owner = ownerService.getOwnerById(containsOwner ? 
-			body.getOwner().getId() : vehicleOwnership.getOwner().getId());
-		Vehicle vehicle = vehicleService.getVehicleById(containsVehicle ? 
-			body.getVehicle().getId() : vehicleOwnership.getVehicle().getId());
-		List<VehicleOwnership> vehicleOwnershipList = repo.findAllByOwner(owner);
-		vehicleOwnershipList.forEach(vehicleOwner -> {
-			String existingVehiclePlaque = vehicleOwner.getVehicle().getPlaque();
-			String newVehiclePlaque = vehicle.getPlaque();
-			boolean samePlaque = Objects.equals(existingVehiclePlaque, newVehiclePlaque) &&
-				!vehicleOwnership.getVehicle().getPlaque().equals(vehicle.getPlaque());
-			if(samePlaque) throw new ResourceAlreadyExistsException("The owner already possesses this vehicle with plaque: "+vehicle.getPlaque());
-		});
-		body.setId(vehicleOwnership.getId());
-		body.setOwner(owner);
-		body.setVehicle(vehicle);
-		return repo.saveAndFlush(body);
+		boolean containsOwner = body.getOwner() != null;
+		Vehicle potentialVehicle = existingVehicleOwnership.getVehicle();
+		if(containsVehicle) potentialVehicle = vehicleService.getVehicleById(body.getVehicle().getId());
+		Owner potentialOwner = existingVehicleOwnership.getOwner();
+		if(containsOwner) potentialOwner = ownerService.getOwnerById(body.getOwner().getId());
+		List<VehicleOwnership> vehicleOwnershipList = repo.findAllByOwner(potentialOwner);
+	    for(VehicleOwnership currentOwnership : vehicleOwnershipList) {
+            if (!currentOwnership.getId().equals(existingVehicleOwnership.getId()) && 
+            	Objects.equals(currentOwnership.getVehicle().getPlaque(), potentialVehicle.getPlaque())) 
+            		throw new ResourceAlreadyExistsException("The owner already possesses this vehicle with plaque: "+potentialVehicle.getPlaque());
+	    }
+	    existingVehicleOwnership.setOwner(potentialOwner);
+	    existingVehicleOwnership.setVehicle(potentialVehicle);
+		return repo.saveAndFlush(existingVehicleOwnership);
 	}
 	
 	public boolean deleteVehicleOwnership(Long id) {

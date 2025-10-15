@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.carpark.dto.vehicleownership.VehicleOwnershipRequestDTO;
+import com.example.carpark.dto.vehicleownership.VehicleOwnershipUpdateDTO;
 import com.example.carpark.infrastructure.entity.VehicleOwnership;
 import com.example.carpark.service.VehicleOwnershipService;
 
@@ -30,7 +32,7 @@ public class VehicleOwnershipController {
 	
 	@PostMapping
 	public ResponseEntity<VehicleOwnership> newVehicleOwnership(
-		@Valid @RequestBody VehicleOwnership vehicleOwnership
+		@Valid @RequestBody VehicleOwnershipRequestDTO vehicleOwnership
 	){
 		return ResponseEntity.ok(service.createVehicleOwnership(vehicleOwnership));
 	}
@@ -50,7 +52,7 @@ public class VehicleOwnershipController {
 	@PutMapping("/{id}")
 	public ResponseEntity<VehicleOwnership> editVehicleOwnership(
 		@PathVariable @Min(1) Long id,
-		@Valid @RequestBody VehicleOwnership body
+		@Valid @RequestBody VehicleOwnershipUpdateDTO body
 	){
 		return ResponseEntity.ok(service.updateVehicleOwnership(id, body));
 	}
