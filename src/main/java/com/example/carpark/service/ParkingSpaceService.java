@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.example.carpark.customexception.ForbiddenFieldModificationException;
+import com.example.carpark.customexception.IncompatibleParkingSpaceException;
 import com.example.carpark.customexception.OccupiedParkingSpaceException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
@@ -22,6 +23,7 @@ public class ParkingSpaceService {
 	private final ParkingSpaceRepository repo;
 	
 	public ParkingSpace createParkingSpace(ParkingSpaceRequestDTO body) {
+		if(repo.existsByPlaceId(body.getPlaceId())) throw new ResourceAlreadyExistsException("This parking space already exists");
 		ParkingSpace newParkingSpace = ParkingSpace.builder()
 			.type(body.getType())
 			.placeId(body.getPlaceId())
@@ -44,34 +46,42 @@ public class ParkingSpaceService {
 			.orElseThrow(() -> new ResourceNotFoundException("No parking space found with placeId: " + placeId));
 	}
 	
-	public ParkingSpace updateParkingSpace(String currentPlaceId, ParkingSpaceUpdateDTO updateDTO) {
-		if(updateDTO.getOccupied() != null) throw new ForbiddenFieldModificationException("The 'occupied' status cannot be manually changed");
+	public ParkingSpace updateParkingSpaceByPlaceId(String currentPlaceId, ParkingSpaceUpdateDTO body) {
         ParkingSpace existingParkingSpace = getParkingSpaceByPlaceId(currentPlaceId);
-        boolean occupiedParkingSpace = existingParkingSpace.getOccupied().booleanValue();
-        if(occupiedParkingSpace) throw new OccupiedParkingSpaceException("Cannot change an occupied parking space");
-        boolean containsPlaceId = updateDTO.getPlaceId() != null;
+        boolean containsOccupied = body.getOccupied() != null;
+        boolean containsType = body.getType() != null;
+        boolean containsPlaceId = body.getPlaceId() != null;
         if(containsPlaceId) {
-            boolean isSamePlaceId = existingParkingSpace.getPlaceId().equals(updateDTO.getPlaceId());
-            if(!isSamePlaceId) {
-                boolean placeIdAlreadyExists = repo.existsByPlaceId(updateDTO.getPlaceId());
-                if (placeIdAlreadyExists) throw new ResourceAlreadyExistsException("This 'placeId' is already in use: "+updateDTO.getPlaceId());
-                existingParkingSpace.setPlaceId(updateDTO.getPlaceId());
-            }
+        	boolean isSamePlaceId = existingParkingSpace.getPlaceId().equals(body.getPlaceId());
+        	if(!isSamePlaceId) {
+        		boolean existisNewParkingSpace = repo.existsByPlaceId(body.getPlaceId());
+        		if(existisNewParkingSpace ) {
+        			ParkingSpace existingNewParkingSpace = getParkingSpaceByPlaceId(body.getPlaceId());
+        			boolean isExistingNewParkingSpaceOccupied = existingNewParkingSpace.getOccupied() == true;
+        			if(isExistingNewParkingSpaceOccupied) throw new OccupiedParkingSpaceException("This parking space is already occupied");
+        			boolean isSameType = existingNewParkingSpace.getType() == 
+        				existingParkingSpace.getType();
+        			if(!isSameType) throw new IncompatibleParkingSpaceException("Incompatible types of parking space");
+        			existingParkingSpace.setPlaceId(body.getPlaceId());
+        		}
+            	existingParkingSpace.setPlaceId(body.getPlaceId());
+        	}
         }
-        boolean containsType = updateDTO.getType() != null;
         if(containsType) {
-        	boolean isSameType = existingParkingSpace.getType().equals(updateDTO.getType());
-            if(!isSameType) {
-                existingParkingSpace.setType(updateDTO.getType());
-                existingParkingSpace.setPrice(updateDTO.getType().getPrice());
-            }
+        	boolean isSameType = existingParkingSpace.getType() == body.getType();
+        	if(!isSameType) {
+        		boolean isExistingParkingSpaceOccupied = existingParkingSpace.getOccupied() == true;
+        		if(isExistingParkingSpaceOccupied) throw new OccupiedParkingSpaceException("Cannot change the type of an occupied parking space");
+        		existingParkingSpace.setType(null);
+        	}
         }
+        if(containsOccupied) existingParkingSpace.setOccupied(body.getOccupied());
         return repo.saveAndFlush(existingParkingSpace);
-    }
+	}
 	
-	public boolean deleteParkingSpace(String placeId) {
-		boolean existingParkingSpace = repo.existsByPlaceId(placeId);
-		if(!existingParkingSpace) throw new ResourceNotFoundException("No resource found with placeId: "+placeId);
-		return repo.deleteByPlaceId(placeId);
+	public boolean deleteParkingSpaceByPlaceId(String placeId) {
+		if(!repo.existsByPlaceId(placeId)) throw new ResourceNotFoundException("Cannot find parking space with placeId: "+placeId);
+		repo.deleteByPlaceId(placeId);
+		return true;
 	}
 }

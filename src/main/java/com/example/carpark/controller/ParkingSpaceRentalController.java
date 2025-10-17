@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.carpark.dto.parkingspacerental.ParkingSpaceRentalRequestDTO;
+import com.example.carpark.dto.parkingspacerental.ParkingSpaceRentalUpdateDTO;
 import com.example.carpark.infrastructure.entity.ParkingSpaceRental;
 import com.example.carpark.service.ParkingSpaceRentalService;
 
@@ -30,7 +32,7 @@ public class ParkingSpaceRentalController {
 	
 	@PostMapping
 	public ResponseEntity<ParkingSpaceRental> newParkingSpaceRental(
-		@Valid @RequestBody ParkingSpaceRental parkingSpaceRental
+		@Valid @RequestBody ParkingSpaceRentalRequestDTO parkingSpaceRental
 	){
 		return ResponseEntity.ok(service
 			.createParkingSpaceRental(parkingSpaceRental));
@@ -51,7 +53,7 @@ public class ParkingSpaceRentalController {
 	@PutMapping("/{id}")
 	public ResponseEntity<ParkingSpaceRental> editParkingSpaceRental(
 		@PathVariable @Min(1) Long id,
-		@RequestBody ParkingSpaceRental body
+		@RequestBody ParkingSpaceRentalUpdateDTO body
 	){
 		return ResponseEntity.ok(service.updateParkingSpaceRental(id, body));
 	}

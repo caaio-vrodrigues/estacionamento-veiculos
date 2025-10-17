@@ -32,12 +32,10 @@ public class ParkingSpaceRental {
 	
 	@ManyToOne
 	@JoinColumn(name="parking_space", nullable=false)
-	@NotNull
 	private ParkingSpace parkingSpace;
 	
 	@ManyToOne
 	@JoinColumn(name="vehicle_ownership", nullable=false)
-	@NotNull
 	private VehicleOwnership vehicleOwnership;
 	
 	@Column(name="start_renting", nullable=false)

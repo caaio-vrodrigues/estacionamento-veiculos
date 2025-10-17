@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.example.carpark.customexception.ClosedRentalServiceException;
 import com.example.carpark.customexception.ForbiddenFieldModificationException;
 import com.example.carpark.customexception.IncompatibleParkingSpaceException;
 import com.example.carpark.customexception.IncompatibleTypeOfVehicleException;
@@ -24,6 +25,7 @@ import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.OccupiedParkingSpaceException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
+import com.example.carpark.customexception.VehicleOwnershipAlreadyInUseException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -348,5 +350,35 @@ public class ExceptionHandlerController {
  	    body.put(MESSAGE, "An unexpected internal server error occurred: "+e.getMessage());
  	    body.put(PATH, request.getRequestURI());
  	    return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+ 	}
+ 	
+ 	@ExceptionHandler(ClosedRentalServiceException.class)
+ 	@ResponseStatus(HttpStatus.CONFLICT)
+ 	public ResponseEntity<Object> handleClosedRentalServiceException(
+ 		ClosedRentalServiceException e,
+ 	    HttpServletRequest request
+ 	){
+ 	    Map<String, Object> body = new LinkedHashMap<>();
+ 	    body.put(TIME_STAMP, LocalDateTime.now());
+ 	    body.put(STATUS, HttpStatus.CONFLICT.value()); 
+ 	    body.put(ERROR, HttpStatus.CONFLICT.getReasonPhrase());
+ 	    body.put(MESSAGE, e.getMessage());
+ 	    body.put(PATH, request.getRequestURI());
+ 	    return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+ 	}
+ 	
+ 	@ExceptionHandler(VehicleOwnershipAlreadyInUseException.class)
+ 	@ResponseStatus(HttpStatus.CONFLICT)
+ 	public ResponseEntity<Object> handleVehicleOwnershipAlreadyInUseException(
+ 		VehicleOwnershipAlreadyInUseException e,
+ 	    HttpServletRequest request
+ 	){
+ 	    Map<String, Object> body = new LinkedHashMap<>();
+ 	    body.put(TIME_STAMP, LocalDateTime.now());
+ 	    body.put(STATUS, HttpStatus.CONFLICT.value()); 
+ 	    body.put(ERROR, HttpStatus.CONFLICT.getReasonPhrase());
+ 	    body.put(MESSAGE, e.getMessage());
+ 	    body.put(PATH, request.getRequestURI());
+ 	    return new ResponseEntity<>(body, HttpStatus.CONFLICT);
  	}
 }

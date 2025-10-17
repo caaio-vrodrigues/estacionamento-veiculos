@@ -31,7 +31,7 @@ public class VehicleOwnership {
 	private Vehicle vehicle;
 	
 	@ManyToOne
-	@JoinColumn(name="name", nullable=false)
+	@JoinColumn(name="owner", nullable=false)
 	@NotNull
 	private Owner owner;
 }

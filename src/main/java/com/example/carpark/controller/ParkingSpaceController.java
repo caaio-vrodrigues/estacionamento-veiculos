@@ -61,13 +61,13 @@ public class ParkingSpaceController {
 		@PathVariable String placeId,
 		@Valid @RequestBody ParkingSpaceUpdateDTO body
 	){
-		return ResponseEntity.ok(service.updateParkingSpace(placeId, body));
+		return ResponseEntity.ok(service.updateParkingSpaceByPlaceId(placeId, body));
 	}
 	
 	@DeleteMapping("/{placeId}")
 	public ResponseEntity<Boolean> excludeParkingSpace(
 		@PathVariable String placeId
 	){
-		return ResponseEntity.ok(service.deleteParkingSpace(placeId));
+		return ResponseEntity.ok(service.deleteParkingSpaceByPlaceId(placeId));
 	}
 }

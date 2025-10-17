@@ -46,6 +46,10 @@ public class VehicleOwnershipService {
 		return repo.findAll();
 	}
 	
+	public List<VehicleOwnership> getAllVehicleOwnershipByVehicle(Vehicle vehicle){
+		return repo.findAllByVehicle(vehicle);
+	}
+	
 	public VehicleOwnership getVehicleOwnershipById(Long id) {
 		return repo.findById(id).orElseThrow(() -> 
 			new ResourceNotFoundException("No ressource found with id: "+id));
