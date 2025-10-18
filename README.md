@@ -62,13 +62,14 @@ Representa um veículo no estacionamento.
 *   **brand**: `VehicleBrand` (Enum que representa a marca do veículo, obrigatório)
 *   **country**: `String` (País de origem da marca do veículo, preenchido automaticamente com base na `brand`)
 *   **plaque**: `String` (Placa do veículo, única, obrigatório, não pode ser vazio)
-*   **type**: `ParkingSpacePrice` (Enum que define o tipo de veículo e o preço padrão da vaga, obrigatório)
+*   **type**: `ParkingSpacePrice` (Enum que define o tipo de veículo e o preço padrão da vaga, preenchido automaticamente com base na `brand`)
 
 #### 3.3. `ParkingSpace`
 
 Representa uma vaga de estacionamento.
 
 *   **id**: `Integer` (Gerado automaticamente)
+*   **placeId**: `String` (Identificador único da vaga, obrigatório, único)
 *   **type**: `ParkingSpacePrice` (Enum que define o tipo de vaga (Carro/Moto), obrigatório)
 *   **price**: `BigDecimal` (Preço da vaga, preenchido automaticamente com base no `type`)
 *   **occupied**: `Boolean` (Indica se a vaga está ocupada ou não, padrão `false`)
@@ -96,15 +97,16 @@ Representa um registro de aluguel (ocupação) de uma vaga de estacionamento por
 
 #### 4.1. `VehicleBrand`
 
-Enumeração para marcas de veículos, incluindo nome e país de origem.
+Enumeração para marcas de veículos, incluindo nome, país de origem e tipo de vaga padrão.
 
-*   `FORD` ("Ford", "Estados Unidos")
-*   `PORSHE` ("Porshe", "Alemanha")
-*   `FERRARI` ("Ferrari", "Itália")
-*   `MERCEDES_BENZ` ("Mercedes-benz", "Alemanha")
-*   `FIAT` ("Fiat", "Itália")
-*   `PEUGEOT` ("Peugeot", "França")
-*   `SUZUKI` ("Suzuki", "Japão")
+*   `FORD` ("Ford", "Estados Unidos", `CAR`)
+*   `PORSHE` ("Porshe", "Alemanha", `CAR`)
+*   `FERRARI` ("Ferrari", "Itália", `CAR`)
+*   `MERCEDES_BENZ` ("Mercedes-benz", "Alemanha", `CAR`)
+*   `FIAT` ("Fiat", "Itália", `CAR`)
+*   `PEUGEOT` ("Peugeot", "França", `CAR`)
+*   `SUZUKI` ("Suzuki", "Japão", `MOTORCYCLE`)
+*   `YAMAHA` ("Yamaha", "Japão", `MOTORCYCLE`)
 
 #### 4.2. `ParkingSpacePrice`
 
@@ -117,11 +119,17 @@ Enumeração para tipos de vagas de estacionamento e seus preços associados.
 
 O sistema utiliza exceções personalizadas para lidar com cenários específicos de negócios:
 
+*   **`ClosedRentalServiceException`**: Lançada quando se tenta modificar um serviço de aluguel de vaga que já foi finalizado. (HTTP Status: `409 CONFLICT`)
+*   **`ForbiddenActionException`**: Lançada quando uma ação é proibida, como tentar modificar um veículo que está em um aluguel ativo ou uma vaga de estacionamento ocupada. (HTTP Status: `403 FORBIDDEN`)
+*   **`ForbiddenFieldModificationException`**: Lançada quando se tenta modificar um campo específico de uma entidade de forma proibida, como tentar ocupar uma vaga e modificar suas propriedades simultaneamente. (HTTP Status: `400 BAD_REQUEST`)
 *   **`IncompatibleParkingSpaceException`**: Lançada quando há uma incompatibilidade entre o tipo de veículo e o tipo de vaga de estacionamento. (HTTP Status: `422 UNPROCESSABLE_ENTITY`)
+*   **`IncompatibleTypeOfVehicleException`**: Lançada quando o tipo de veículo não é compatível com o tipo de vaga de estacionamento esperada. (HTTP Status: `422 UNPROCESSABLE_ENTITY`)
 *   **`MissingRequiredFieldException`**: Lançada quando um ou mais campos obrigatórios estão ausentes ou incompletos na requisição. (HTTP Status: `400 BAD_REQUEST`)
 *   **`OccupiedParkingSpaceException`**: Lançada quando se tenta estacionar um veículo em uma vaga já ocupada. (HTTP Status: `409 CONFLICT`)
+*   **`ParkingSpaceAlreadyExistsException`**: Lançada quando se tenta criar uma vaga de estacionamento com um `placeId` que já existe. (HTTP Status: `409 CONFLICT`)
 *   **`ResourceAlreadyExistsException`**: Lançada quando se tenta criar um recurso que já existe (por exemplo, placa de veículo ou carteira de motorista duplicada, ou um veículo já está alugando uma vaga). (HTTP Status: `409 CONFLICT`)
-*   **`ResourceNotFoundException`**: Lançada quando um recurso não é encontrado pelo ID fornecido. (HTTP Status: `404 NOT_FOUND`)
+*   **`ResourceNotFoundException`**: Lançada quando um recurso não é encontrado pelo ID ou `placeId` fornecido. (HTTP Status: `404 NOT_FOUND`)
+*   **`VehicleOwnershipAlreadyInUseException`**: Lançada quando se tenta associar um veículo a um proprietário ou registrar um aluguel de vaga, mas o veículo já está em uso em outra locação. (HTTP Status: `409 CONFLICT`)
 
 ### 6. Tratamento Global de Exceções
 
@@ -130,290 +138,375 @@ A classe `ExceptionHandlerController` é responsável por interceptar e tratar a
 *   **`MethodArgumentNotValidException`**: Captura erros de validação de campos em requisições (`@Valid`), retornando `400 BAD_REQUEST` com detalhes dos campos inválidos.
 *   **`ConstraintViolationException`**: Captura erros de validação em parâmetros de métodos (ex: `@PathVariable @Min(1)`), retornando `400 BAD_REQUEST`.
 *   **`HttpMessageNotReadableException`**: Captura erros de parsing do corpo da requisição (ex: JSON malformado), retornando `400 BAD_REQUEST`.
+*   **`DataIntegrityViolationException`**: Captura erros de integridade de dados (como chaves duplicadas ou campos nulos obrigatórios), retornando `409 CONFLICT` com uma mensagem detalhada.
+*   **`MethodArgumentTypeMismatchException`**: Lançada quando um argumento de método não corresponde ao tipo esperado (ex: ID que não é numérico), retornando `400 BAD_REQUEST`.
+*   **`InvalidDataAccessApiUsageException`**: Lançada para uso incorreto da API de acesso a dados, retornando `500 INTERNAL_SERVER_ERROR`.
+*   **`NullPointerException`**: Lançada quando ocorre um acesso a objeto nulo inesperado, retornando `500 INTERNAL_SERVER_ERROR`.
+*   **`IllegalStateException`**: Lançada para estados inválidos da aplicação, retornando `500 INTERNAL_SERVER_ERROR`.
+*   **`NoResourceFoundException`**: Lançada quando um recurso de URI não é encontrado, retornando `404 NOT_FOUND`.
+*   **`HttpRequestMethodNotSupportedException`**: Lançada quando um método HTTP não é suportado para um endpoint, retornando `405 METHOD_NOT_ALLOWED`.
+*   **`Error.class`**: Captura erros gerais e inesperados no servidor, retornando `500 INTERNAL_SERVER_ERROR`.
 *   As **exceções personalizadas** (mencionadas na seção anterior) são mapeadas para os respectivos códigos de status HTTP e mensagens de erro.
 
 O corpo da resposta de erro segue um padrão JSON contendo: `timestamp`, `status`, `error`, `message`, `path` e `details` (para erros de validação).
 
-### 7. Endpoints da API
+Exemplo de corpo de erro:
+```json
+{
+    "timestamp": "2025-10-18T21:06:00.903",
+    "status": 400,
+    "error": "Bad Request",
+    "message": "Um ou mais campos no corpo da requisição falharam na validação.",
+    "path": "/owner",
+    "details": {
+        "fullName": "The property 'fullName' can't be 'empty'"
+    }
+}
+```
+### 7. Exceções Personalizadas
 
 A API é organizada por recursos relacionados a proprietários, veículos, propriedade de veículos, vagas de estacionamento e aluguéis de vagas.
 
-#### 7.1. Endpoints de Proprietários (`/owner`)
+### 7.1. Endpoints de Proprietários (`/owner`)
 
 Base: `/owner`
 
-*   **`POST /owner`**
-    *   **Descrição**: Cria um novo proprietário.
-    *   **Método**: `POST`
-    *   **Corpo da Requisição**: `Owner` (JSON)
-        ```json
-        {
-            "fullName": "Caio Vinicius Rodrigues",
-            "driversLicense": "12345678900"
-        }
-        ```
-    *   **Resposta**: `200 OK` com o `Owner` criado.
+*   `POST /owner`
 
-*   **`GET /owner`**
-    *   **Descrição**: Lista todos os proprietários registrados.
-    *   **Método**: `GET`
-    *   **Resposta**: `200 OK` com uma lista de `Owner`.
+    *   Descrição: Cria um novo proprietário.
+    *   Método: POST
+    *   Corpo da Requisição: OwnerRequestDTO (JSON)
+    ```json
+    {
+        "fullName": "Caio Vinicius Rodrigues",
+        "driversLicense": "12345678900"
+    }
+    ```
+    *  Resposta: 200 OK com o Owner criado. 
 
-*   **`GET /owner/{id}`**
-    *   **Descrição**: Busca um proprietário pelo ID.
-    *   **Método**: `GET`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Resposta**: `200 OK` com o `Owner` encontrado.
+*   `GET /owner`
 
-*   **`PUT /owner/{id}`**
-    *   **Descrição**: Atualiza um proprietário existente.
-    *   **Método**: `PUT`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Corpo da Requisição**: `Owner` (JSON - apenas os campos a serem atualizados)
-        ```json
-        {
-            "fullName": "Caio Vinicius Rodrigues",
-            "driversLicense": "12345678901"
-        }
-        ```
-    *   **Resposta**: `200 OK` com o `Owner` atualizado.
+    *   Descrição: Lista todos os proprietários registrados.
+    *   Método: `GET`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com o `Owner` encontrado.
 
-*   **`DELETE /owner/{id}`**
-    *   **Descrição**: Exclui um proprietário pelo ID.
-    *   **Método**: `DELETE`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Resposta**: `200 OK` com `true` se a exclusão for bem-sucedida.
+*   `GET /owner/{id}`
 
-#### 7.2. Endpoints de Veículos (`/vehicle`)
+    *   Descrição: Busca um proprietário pelo ID.
+    *   Método: `GET`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com o Owner encontrado.
 
-Base: `/vehicle`
+*   `PUT /owner/{id}`
 
-*   **`POST /vehicle`**
-    *   **Descrição**: Cria um novo veículo. O campo `country` é preenchido automaticamente com base na marca (`brand`).
-    *   **Método**: `POST`
-    *   **Corpo da Requisição**: `Vehicle` (JSON)
-        ```json
-        {
-            "model": "HB20",
-            "brand": "FIAT",
-            "plaque": "ABC-1234",
-            "type": "CAR"
-        }
-        ```
-    *   **Resposta**: `200 OK` com o `Vehicle` criado.
+    *   Descrição: Atualiza um proprietário existente.
+    *   Método: `PUT`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Corpo da Requisição: `OwnerUpdateDTO` (JSON - apenas os campos a serem atualizados)
+    ```json
+    {
+        "fullName": "Caio Vinicius Rodrigues Atualizado",
+        "driversLicense": "12345678901"
+    }
+    ```
+    *   Resposta: `200 OK` com o Owner atualizado.
 
-*   **`GET /vehicle`**
-    *   **Descrição**: Lista todos os veículos registrados.
-    *   **Método**: `GET`
-    *   **Resposta**: `200 OK` com uma lista de `Vehicle`.
+*   `DELETE /owner/{id}`
 
-*   **`GET /vehicle/{id}`**
-    *   **Descrição**: Busca um veículo pelo ID.
-    *   **Método**: `GET`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Resposta**: `200 OK` com o `Vehicle` encontrado.
+    *   Descrição: Exclui um proprietário pelo ID.
+    *   Método: `DELETE`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com true se a exclusão for bem-sucedida.
 
-*   **`PUT /vehicle/{id}`**
-    *   **Descrição**: Atualiza um veículo existente. O campo `country` é atualizado se a `brand` for alterada.
-    *   **Método**: `PUT`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Corpo da Requisição**: `Vehicle` (JSON - apenas os campos a serem atualizados)
-        ```json
-        {
-            "model": "HB20s",
-            "plaque": "XYZ-5678"
-        }
-        ```
-    *   **Resposta**: `200 OK` com o `Vehicle` atualizado.
+### 7.2. Endpoints de Veículos (`/vehicle`)
 
-*   **`DELETE /vehicle/{id}`**
-    *   **Descrição**: Exclui um veículo pelo ID.
-    *   **Método**: `DELETE`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Resposta**: `200 OK` com `true` se a exclusão for bem-sucedida.
+BASE: `/vehicle`
 
-#### 7.3. Endpoints de Propriedade de Veículos (`/vehicle-ownership`)
+*   `POST /vehicle`
+
+    *   Descrição: Cria um novo veículo. O campo `country` é preenchido automaticamente com base na marca (`brand`), e o `type` é preenchido com base na marca.
+    *   Método: `POST`
+    *   Corpo da Requisição: `VehicleRequestDTO` (JSON)
+    ```json
+    {
+        "model": "HB20",
+        "brand": "FIAT",
+        "plaque": "ABC-1234",
+        "type": "CAR"
+    }
+    ```
+    *   Resposta: `200 OK` com o `Vehicle` criado.
+
+*   `GET /vehicle`
+
+    *   Descrição: Lista todos os veículos registrados.
+    *   Método: `GET`
+    *   Resposta: `200 OK` com uma lista de `Vehicle`. 
+
+*   `GET /vehicle/{id}`
+
+    *   Descrição: Busca um veículo pelo ID.
+    *   Método: `GET`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com o `Vehicle` encontrado.`
+
+*   `PUT /vehicle/{id}`
+
+    *   Descrição: Atualiza um veículo existente. O campo `country` é atualizado se a `brand` for alterada. Não é possível modificar um veículo que esteja em  um aluguel de vaga ativo.
+    *   Método: `PUT`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Corpo da Requisição: `VehicleUpdateDTO` (JSON - apenas os campos a serem atualizados)
+    ```json
+    {
+        "model": "HB20s",
+        "brand": "FIAT",
+        "plaque": "XYZ-5678",
+        "type": "CAR"
+    }
+    ```
+    *   Resposta: `200 OK` com o `Vehicle` atualizado.
+
+*   `DELETE /vehicle/{id}`
+
+    *   Descrição: Exclui um veículo pelo ID.
+    *   Método: `DELETE`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com `true` se a exclusão for bem-sucedida.
+
+### 7.3 Endpoints de Propriedade de Veículos (`/vehicle-ownership`)
 
 Base: `/vehicle-ownership`
 
-*   **`POST /vehicle-ownership`**
-    *   **Descrição**: Associa um veículo a um proprietário. Requer que `Owner` e `Vehicle` já existam.
-    *   **Método**: `POST`
-    *   **Corpo da Requisição**: `VehicleOwnership` (JSON)
-        ```json
-        {
-            "owner": {
-                "id": 1
-            },
-            "vehicle": {
-                "id": 1
-            }
+*   `POST /vehicle-ownership`
+
+    *   Descrição: Associa um veículo a um proprietário. Requer que `Owner` e `Vehicle` já existam.
+    *   Método: `POST`
+    *   Corpo da Requisição: `VehicleOwnershipRequestDTO` (JSON)
+    ```json
+    {
+        "owner": {
+            "id": 1
+        },
+        "vehicle": {
+            "id": 1
         }
-        ```
-    *   **Resposta**: `200 OK` com o `VehicleOwnership` criado.
+    }
+    ```
+    *   Resposta: `200 OK` com o `VehicleOwnership` criado.
 
-*   **`GET /vehicle-ownership`**
-    *   **Descrição**: Lista todas as associações de propriedade de veículos.
-    *   **Método**: `GET`
-    *   **Resposta**: `200 OK` com uma lista de `VehicleOwnership`.
+*   `GET /vehicle-ownership`
 
-*   **`GET /vehicle-ownership/{id}`**
-    *   **Descrição**: Busca uma associação de propriedade pelo ID.
-    *   **Método**: `GET`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Resposta**: `200 OK` com o `VehicleOwnership` encontrado.
+    *   Descrição: Lista todas as associações de propriedade de veículos.
+    *   Método: `GET`
+    *   Resposta: `200 OK` com uma lista de `VehicleOwnership`.
 
-*   **`PUT /vehicle-ownership/{id}`**
-    *   **Descrição**: Atualiza uma associação de propriedade existente.
-    *   **Método**: `PUT`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Corpo da Requisição**: `VehicleOwnership` (JSON - apenas os IDs a serem atualizados)
-        ```json
-        {
-            "owner": {
-                "id": 2
-            },
-            "vehicle": {
-                "id": 3
-            }
+*   `GET /vehicle-ownership/{id}`
+
+    *    Descrição: Busca uma associação de propriedade pelo ID.
+    *    Método: `GET`
+    *    Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *    Resposta: `200 OK` com o `VehicleOwnership` encontrado.
+
+*   `PUT /vehicle-ownership/{id}`
+
+    *   Descrição: Atualiza uma associação de propriedade existente.
+    *   Método: `PUT`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Corpo da Requisição: `VehicleOwnershipUpdateDTO` (JSON - apenas os IDs a serem atualizados)
+    ```json
+    {
+        "owner": {
+            "id": 2
+        },
+        "vehicle": {
+            "id": 3
         }
-        ```
-    *   **Resposta**: `200 OK` com o `VehicleOwnership` atualizado.
+    }
+    ```
+    * Resposta: `200 OK` com o `VehicleOwnership` atualizado.
 
-*   **`DELETE /vehicle-ownership/{id}`**
-    *   **Descrição**: Exclui uma associação de propriedade pelo ID.
-    *   **Método**: `DELETE`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Resposta**: `200 OK` com `true` se a exclusão for bem-sucedida.
+*   `DELETE /vehicle-ownership/{id}`
+    *   Descrição: Exclui uma associação de propriedade pelo ID.
+    *   Método: `DELETE`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com `true` se a exclusão for bem-sucedida.
 
-#### 7.4. Endpoints de Vagas de Estacionamento (`/parking-space`)
+### 7.4 Endpoints de Vagas de Estacionamento (`/parking-space`)
 
 Base: `/parking-space`
 
-*   **`POST /parking-space`**
-    *   **Descrição**: Cria uma nova vaga de estacionamento. O `price` e `occupied` são preenchidos automaticamente.
-    *   **Método**: `POST`
-    *   **Corpo da Requisição**: `ParkingSpace` (JSON)
-        ```json
-        {
-            "type": "CAR"
-        }
-        ```
-    *   **Resposta**: `200 OK` com o `ParkingSpace` criado.
+*   `POST /parking-space`
 
-*   **`GET /parking-space`**
-    *   **Descrição**: Lista todas as vagas de estacionamento.
-    *   **Método**: `GET`
-    *   **Resposta**: `200 OK` com uma lista de `ParkingSpace`.
+    *   Descrição: Cria uma nova vaga de estacionamento. O `price` e `occupied` são preenchidos automaticamente.
+    *   Método: `POST`
+    *   Corpo da Requisição: `ParkingSpaceRequestDTO` (JSON)
+    ```json
+    {
+        "type": "CAR",
+        "placeId": "A1"
+    }
+    ```
+    *   Resposta: `200 OK` com o `ParkingSpace` criado.
 
-*   **`GET /parking-space/{id}`**
-    *   **Descrição**: Busca uma vaga de estacionamento pelo ID.
-    *   **Método**: `GET`
-    *   **Parâmetros de Path**: `id` (Integer)
-    *   **Resposta**: `200 OK` com o `ParkingSpace` encontrado.
+*   `GET /parking-space`
+    *   Descrição: Lista todas as vagas de estacionamento.
+    *   Método: `GET`
+    *   Resposta: `200 OK` com uma lista de `ParkingSpace`.
 
-*   **`PUT /parking-space/{id}`**
-    *   **Descrição**: Atualiza uma vaga de estacionamento existente. O `price` é atualizado se o `type` for alterado.
-    *   **Método**: `PUT`
-    *   **Parâmetros de Path**: `id` (Integer)
-    *   **Corpo da Requisição**: `ParkingSpace` (JSON - apenas os campos a serem atualizados)
-        ```json
-        {
-            "type": "MOTORCYCLE",
-            "occupied": true
-        }
-        ```
-    *   **Resposta**: `200 OK` com o `ParkingSpace` atualizado.
+*   `GET /parking-space/{id}`
+    *   Descrição: Busca uma vaga de estacionamento pelo ID (gerado automaticamente).
+    *   Método: `GET`
+    *   Parâmetros de Path: `id` (Integer, `@Min(1)`)
+    *   Resposta: `200 OK` com o `ParkingSpace` encontrado.
 
-*   **`DELETE /parking-space/{id}`**
-    *   **Descrição**: Exclui uma vaga de estacionamento pelo ID.
-    *   **Método**: `DELETE`
-    *   **Parâmetros de Path**: `id` (Integer)
-    *   **Resposta**: `200 OK` com `true` se a exclusão for bem-sucedida.
+*   `GET /parking-space/space/{placeId}`
+    *   Descrição: Busca uma vaga de estacionamento pelo `placeId` (identificador único da vaga).
+    *   Método: `GET`
+    *   Parâmetros de Path: `placeId` (String)
+    *   Resposta: `200 OK` com o `ParkingSpace` encontrado.
 
-#### 7.5. Endpoints de Aluguéis de Vagas (`/parkingspace-rental`)
+*   `PUT /parking-space/{placeId}`
+    *   Descrição: Atualiza uma vaga de estacionamento existente, identificada pelo `placeId`. O `price` é atualizado se o `type` for alterado. Não é  possível alterar `type` ou `placeId` de uma vaga ocupada.
+    *   Método: `PUT`
+    *   Parâmetros de Path: `placeId` (String)
+    *   Corpo da Requisição: `ParkingSpaceUpdateDTO` (JSON - apenas os campos a serem atualizados)
+    ```json
+    {
+        "type": "MOTORCYCLE",
+        "occupied": false,
+        "placeId": "B2"
+    }
+    ```
+    *   Resposta: `200 OK` com o `ParkingSpace` atualizado.
+
+*   `DELETE /parking-space/{placeId}`
+
+    *   Descrição: Exclui uma vaga de estacionamento pelo `placeId`.
+    *   Método: `DELETE`
+    *   Parâmetros de Path: `placeId` (String)
+    *   Resposta: `200 OK` com true se a exclusão for bem-sucedida.
+
+### 7.5. Endpoints de Aluguéis de Vagas (`/parkingspace-rental`)
 
 Base: `/parkingspace-rental`
 
-*   **`POST /parkingspace-rental`**
-    *   **Descrição**: Registra um novo aluguel de vaga. O `startRenting` é preenchido automaticamente. Verifica se a vaga está livre, se a vaga e o veículo são compatíveis, e se o veículo já não está em uma locação.
-    *   **Método**: `POST`
-    *   **Corpo da Requisição**: `ParkingSpaceRental` (JSON)
-        ```json
-        {
-            "parkingSpace": {
-                "id": 1
-            },
-            "vehicleOwnership": {
-                "id": 1
-            }
+*   `POST /parkingspace-rental`
+
+    *   Descrição: Registra um novo aluguel de vaga. O `startRenting` é preenchido automaticamente. Verifica se a vaga está livre, se a vaga e o veículo são compatíveis, e se o veículo já não está em uma locação.
+    *   Método: `POST`
+    *   Corpo da Requisição: `ParkingSpaceRentalRequestDTO` (JSON)
+    ```json
+    {
+        "parkingSpace": {
+            "placeId": "A1"
+        },
+        "vehicleOwnership": {
+            "id": 1
         }
-        ```
-    *   **Resposta**: `200 OK` com o `ParkingSpaceRental` registrado.
+    }
+    ```
+    *   Resposta: `200 OK` com o `ParkingSpaceRental` registrado.
 
-*   **`GET /parkingspace-rental`**
-    *   **Descrição**: Lista todos os registros de aluguéis de vagas.
-    *   **Método**: `GET`
-    *   **Resposta**: `200 OK` com uma lista de `ParkingSpaceRental`.
+*   `GET /parkingspace-rental`
 
-*   **`GET /parkingspace-rental/{id}`**
-    *   **Descrição**: Busca um registro de aluguel pelo ID.
-    *   **Método**: `GET`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Resposta**: `200 OK` com o `ParkingSpaceRental` encontrado.
+    *   Descrição: Lista todos os registros de aluguéis de vagas.
+    *   Método: `GET`
+    *   Resposta: `200 OK` com uma lista de `ParkingSpaceRental`.
+ 
+*   `GET /parkingspace-rental/{id}`
 
-*   **`PUT /parkingspace-rental/{id}`**
-    *   **Descrição**: Atualiza um registro de aluguel existente (sem finalizar o aluguel). Permite alterar a vaga ou a propriedade do veículo associada, verificando a compatibilidade.
-    *   **Método**: `PUT`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Corpo da Requisição**: `ParkingSpaceRental` (JSON - apenas os campos a serem atualizados, ex: `parkingSpace.id`, `vehicleOwnership.id`)
-        ```json
-        {
-            "parkingSpace": {
-                "id": 2
-            },
-            "vehicleOwnership": {
-                "id": 1
-            }
+    *   Descrição: Busca um registro de aluguel pelo ID.
+    *   Método: `GET`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com o `ParkingSpaceRental` encontrado.
+
+*   `PUT /parkingspace-rental/{id}`
+
+    *   Descrição: Atualiza um registro de aluguel existente (sem finalizar o aluguel). Permite alterar a vaga ou a propriedade do veículo associada, verificando a compatibilidade. Não é possível modificar um aluguel já finalizado.
+    *   Método: `PUT`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Corpo da Requisição: `ParkingSpaceRentalUpdateDTO` (JSON - apenas os campos a serem atualizados, ex: `parkingSpace.placeId`, `vehicleOwnership.id`)
+    ```json
+    {
+        "parkingSpace": {
+            "placeId": "B2"
+        },
+        "vehicleOwnership": {
+            "id": 1
         }
-        ```
-    *   **Resposta**: `200 OK` com o `ParkingSpaceRental` atualizado.
+    }
+    ```
+    *   Resposta: `200 OK` com o `ParkingSpaceRental` atualizado.
 
-*   **`PUT /parkingspace-rental/end-rental/{id}`**
-    *   **Descrição**: Finaliza um aluguel de vaga. O `endRenting` é preenchido com a data e hora atuais, a vaga é desocupada e o `totalRent` é calculado com base na duração e no preço da vaga.
-    *   **Método**: `PUT`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Resposta**: `200 OK` com o `ParkingSpaceRental` atualizado.
+*   `GET /parkingspace-rental`
 
-*   **`DELETE /parkingspace-rental/{id}`**
-    *   **Descrição**: Exclui um registro de aluguel pelo ID. Libera a vaga associada se ela estiver ocupada por este aluguel.
-    *   **Método**: `DELETE`
-    *   **Parâmetros de Path**: `id` (Long)
-    *   **Resposta**: `200 OK` com `true` se a exclusão for bem-sucedida.
+    *   Descrição: Lista todos os registros de aluguéis de vagas.
+    *   Método: `GET`
+    *   Resposta: `200 OK` com uma lista de `ParkingSpaceRental`.
+
+*   `GET /parkingspace-rental/{id}`
+
+    *   Descrição: Busca um registro de aluguel pelo ID.
+    *   Método: `GET`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com o `ParkingSpaceRental` encontrado.
+
+*   `PUT /parkingspace-rental/{id}`
+
+    *   Descrição: Atualiza um registro de aluguel existente (sem finalizar o aluguel). Permite alterar a vaga ou a propriedade do veículo associada, verificando a compatibilidade. Não é possível modificar um aluguel já finalizado. 
+    *   Método: `PUT`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Corpo da Requisição: `ParkingSpaceRentalUpdateDTO` (JSON - apenas os campos a serem atualizados, ex: `parkingSpace.placeId`, `vehicleOwnership.id`)
+    ```json
+    {
+        "parkingSpace": {
+            "placeId": "B2"
+        },
+        "vehicleOwnership": {
+            "id": 1
+        }
+    }
+    ```
+    *   Resposta: `200 OK` com o `ParkingSpaceRental` atualizado.
+
+*   `PUT /parkingspace-rental/end-rental/{id}`
+
+    *   Descrição: Finaliza um aluguel de vaga. O `endRenting` é preenchido com a data e hora atuais, a vaga é desocupada e o `totalRent` é calculado com base na duração e no preço da vaga.
+    *   Método: `PUT`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com o `ParkingSpaceRental` atualizado.
+
+*   `DELETE /parkingspace-rental/{id}`
+
+    *   Descrição: Exclui um registro de aluguel pelo ID. Libera a vaga associada se ela estiver ocupada por este aluguel.
+    *   Método: `DELETE`
+    *   Parâmetros de Path: `id` (Long, `@Min(1)`)
+    *   Resposta: `200 OK` com `true` se a exclusão for bem-sucedida.
 
 ### 8. Configurações Essenciais (`application.properties`)
 
-*   **Nome da Aplicação**:
+*   Nome da Aplicação:
     *   `spring.application.name=carpark`
-*   **Console H2 Database**:
+*   Console H2 Database:
     *   `spring.h2.console.enabled=true`
     *   `spring.h2.console.path=/h2-console`
-*   **Configurações de Banco de Dados H2**:
+*   Configurações de Banco de Dados H2:
     *   `spring.datasource.driver-class-name=org.h2.Driver`
     *   `spring.datasource.url=jdbc:h2:file:/data/db/carparkdb` (Banco de dados persistido em arquivo)
     *   `spring.datasource.username=sa`
-    *   `spring.datasource.password=` (sem senha)
-*   **JPA (atualização do banco de dados)**:
+    *   `spring.datasource.password= (sem senha)`
+*   JPA (atualização do banco de dados):
     *   `spring.jpa.hibernate.ddl-auto=update`
 
 ### 9. Executando Localmente
 
 A aplicação utiliza Maven para construção e pode ser executada diretamente como uma aplicação Spring Boot.
 
-*   **Pré-requisitos**:
+*   Pré-requisitos:
     *   Java 21 instalado
     *   Maven instalado
-*   **Passos para Execução**:
+*   Passos para Execução:
     *   Navegue até a raiz do projeto (onde está o arquivo `pom.xml`).
     *   Execute a aplicação usando o comando Maven: `mvn spring-boot:run`
     *   A aplicação estará disponível em `http://localhost:8080` (porta padrão do Spring Boot).
