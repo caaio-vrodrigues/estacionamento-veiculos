@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.carpark.customexception.ForbiddenActionException;
 import com.example.carpark.customexception.ForbiddenFieldModificationException;
-import com.example.carpark.customexception.IncompatibleParkingSpaceException;
-import com.example.carpark.customexception.OccupiedParkingSpaceException;
+import com.example.carpark.customexception.ParkingSpaceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.dto.parkingspace.ParkingSpaceRequestDTO;
@@ -14,6 +14,7 @@ import com.example.carpark.dto.parkingspace.ParkingSpaceUpdateDTO;
 import com.example.carpark.infrastructure.entity.ParkingSpace;
 import com.example.carpark.infrastructure.repository.ParkingSpaceRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -23,7 +24,7 @@ public class ParkingSpaceService {
 	private final ParkingSpaceRepository repo;
 	
 	public ParkingSpace createParkingSpace(ParkingSpaceRequestDTO body) {
-		if(repo.existsByPlaceId(body.getPlaceId())) throw new ResourceAlreadyExistsException("This parking space already exists");
+		if(repo.existsByPlaceId(body.getPlaceId())) throw new ResourceAlreadyExistsException("The parking space with placeId: "+body.getPlaceId()+" already exists");
 		ParkingSpace newParkingSpace = ParkingSpace.builder()
 			.type(body.getType())
 			.placeId(body.getPlaceId())
@@ -46,39 +47,50 @@ public class ParkingSpaceService {
 			.orElseThrow(() -> new ResourceNotFoundException("No parking space found with placeId: " + placeId));
 	}
 	
-	public ParkingSpace updateParkingSpaceByPlaceId(String currentPlaceId, ParkingSpaceUpdateDTO body) {
-        ParkingSpace existingParkingSpace = getParkingSpaceByPlaceId(currentPlaceId);
-        boolean containsOccupied = body.getOccupied() != null;
-        boolean containsType = body.getType() != null;
-        boolean containsPlaceId = body.getPlaceId() != null;
-        if(containsPlaceId) {
-        	boolean isSamePlaceId = existingParkingSpace.getPlaceId().equals(body.getPlaceId());
-        	if(!isSamePlaceId) {
-        		boolean existisNewParkingSpace = repo.existsByPlaceId(body.getPlaceId());
-        		if(existisNewParkingSpace ) {
-        			ParkingSpace existingNewParkingSpace = getParkingSpaceByPlaceId(body.getPlaceId());
-        			boolean isExistingNewParkingSpaceOccupied = existingNewParkingSpace.getOccupied() == true;
-        			if(isExistingNewParkingSpaceOccupied) throw new OccupiedParkingSpaceException("This parking space is already occupied");
-        			boolean isSameType = existingNewParkingSpace.getType() == 
-        				existingParkingSpace.getType();
-        			if(!isSameType) throw new IncompatibleParkingSpaceException("Incompatible types of parking space");
-        			existingParkingSpace.setPlaceId(body.getPlaceId());
-        		}
-            	existingParkingSpace.setPlaceId(body.getPlaceId());
-        	}
-        }
-        if(containsType) {
-        	boolean isSameType = existingParkingSpace.getType() == body.getType();
-        	if(!isSameType) {
-        		boolean isExistingParkingSpaceOccupied = existingParkingSpace.getOccupied() == true;
-        		if(isExistingParkingSpaceOccupied) throw new OccupiedParkingSpaceException("Cannot change the type of an occupied parking space");
-        		existingParkingSpace.setType(null);
-        	}
-        }
-        if(containsOccupied) existingParkingSpace.setOccupied(body.getOccupied());
-        return repo.saveAndFlush(existingParkingSpace);
+	public ParkingSpace updateParkingSpaceByPlaceId(
+		String placeId, 
+		ParkingSpaceUpdateDTO body
+	) {
+		ParkingSpace existingParkingSpace = getParkingSpaceByPlaceId(placeId);
+		boolean containsOccupied = body.getOccupied() != null;
+		boolean containsPlaceId = body.getPlaceId() != null;
+		boolean containsType = body.getType() != null;
+		boolean isOccupiedAndNoChanges = 
+			existingParkingSpace.getOccupied() == true && !containsOccupied;
+		boolean isOccupiedAndModifyToSameState = existingParkingSpace.getOccupied() == true &&
+			containsOccupied && body.getOccupied() == true;
+		boolean isOccupied = isOccupiedAndNoChanges || isOccupiedAndModifyToSameState;
+		if(containsOccupied) {
+			boolean occupied = body.getOccupied();
+			if(occupied == true) {
+				boolean containsTypeOrPlaceIdAndIsDifferent = containsType && body.getType() != 
+					existingParkingSpace.getType() || containsPlaceId && !body.getPlaceId().equals(
+						existingParkingSpace.getPlaceId());
+				if(containsTypeOrPlaceIdAndIsDifferent) throw new ForbiddenFieldModificationException("Cannot set property occupied to true and modify the same parking space at the same time");
+				existingParkingSpace.setOccupied(body.getOccupied());
+			}
+			if(occupied == false) existingParkingSpace.setOccupied(body.getOccupied());
+		}
+		if(containsPlaceId) {
+			boolean isSamePlaceId = existingParkingSpace.getPlaceId().equals(body.getPlaceId());
+			if(!isSamePlaceId) {
+				if(isOccupied) throw new ForbiddenActionException("Cannot modify an occupied parking space");
+				boolean placeIdIsAlreadyInUse = repo.existsByPlaceId(body.getPlaceId());
+				if(placeIdIsAlreadyInUse) throw new ParkingSpaceAlreadyExistsException("The placeId: "+body.getPlaceId()+" already exists");
+				existingParkingSpace.setPlaceId(body.getPlaceId());
+			}
+		}
+		if(containsType) {
+			boolean isSameType = existingParkingSpace.getType() == body.getType();
+			if(!isSameType) {
+				if(isOccupied) throw new ForbiddenActionException("Cannot modify an occupied parking space");
+				existingParkingSpace.setType(body.getType());
+			}
+		}
+		return repo.saveAndFlush(existingParkingSpace);
 	}
 	
+	@Transactional
 	public boolean deleteParkingSpaceByPlaceId(String placeId) {
 		if(!repo.existsByPlaceId(placeId)) throw new ResourceNotFoundException("Cannot find parking space with placeId: "+placeId);
 		repo.deleteByPlaceId(placeId);

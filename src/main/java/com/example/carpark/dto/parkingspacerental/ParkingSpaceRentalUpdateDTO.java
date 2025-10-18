@@ -1,6 +1,5 @@
 package com.example.carpark.dto.parkingspacerental;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.example.carpark.infrastructure.entity.ParkingSpace;
@@ -19,7 +18,5 @@ public class ParkingSpaceRentalUpdateDTO {
 
 	private ParkingSpace parkingSpace;
 	private VehicleOwnership vehicleOwnership;
-	private LocalDateTime startRenting;
 	private LocalDateTime endRenting;
-	private BigDecimal totalRent;
 }

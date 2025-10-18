@@ -7,7 +7,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,11 +26,9 @@ public class VehicleOwnership {
 	
 	@ManyToOne
 	@JoinColumn(name="vehicle", nullable=false)
-	@NotNull
 	private Vehicle vehicle;
 	
 	@ManyToOne
 	@JoinColumn(name="owner", nullable=false)
-	@NotNull
 	private Owner owner;
 }

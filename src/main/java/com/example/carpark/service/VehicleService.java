@@ -4,14 +4,18 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.example.carpark.customexception.IncompatibleTypeOfVehicleException;
+import com.example.carpark.customexception.ForbiddenActionException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.domain.ParkingSpacePrice;
 import com.example.carpark.domain.VehicleBrand;
 import com.example.carpark.dto.vehicle.VehicleRequestDTO;
 import com.example.carpark.dto.vehicle.VehicleUpdateDTO;
+import com.example.carpark.infrastructure.entity.ParkingSpaceRental;
 import com.example.carpark.infrastructure.entity.Vehicle;
+import com.example.carpark.infrastructure.entity.VehicleOwnership;
+import com.example.carpark.infrastructure.repository.ParkingSpaceRentalRepository;
+import com.example.carpark.infrastructure.repository.VehicleOwnershipRepository;
 import com.example.carpark.infrastructure.repository.VehicleRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 public class VehicleService {
 
 	private final VehicleRepository repo;
+	private final VehicleOwnershipRepository vehicleOwnershipRepo;
+	private final ParkingSpaceRentalRepository parkingSpaceRentalRepo;
 	
 	public Vehicle createVehicle(VehicleRequestDTO  body) {
 		boolean existingVehiclePlaque = repo.existsByPlaque(body.getPlaque());
@@ -45,12 +51,17 @@ public class VehicleService {
 	
 	public Vehicle updateVehicle(Long id, VehicleUpdateDTO body) {
 		Vehicle existingVehicle = getVehicleById(id);
+		List<VehicleOwnership> vehicleOwnershipList = vehicleOwnershipRepo
+			.findAllByVehicle(existingVehicle);
+		for(VehicleOwnership vehicleOwnership : vehicleOwnershipList) {
+			List<ParkingSpaceRental> parkingSpaceRentalList = parkingSpaceRentalRepo
+				.findAllByVehicleOwnershipAndEndRentingIsNull(vehicleOwnership);
+			if(!parkingSpaceRentalList.isEmpty()) throw new ForbiddenActionException("Cannot modify a vehicle that is in open rental");
+		}
 		VehicleBrand potentialNewBrand = existingVehicle.getBrand();
         if (body.getBrand() != null) potentialNewBrand = body.getBrand();
         ParkingSpacePrice potentialNewType = existingVehicle.getType();
         if (body.getType() != null) potentialNewType = body.getType();
-		boolean incompatibleType = potentialNewBrand.getType() != potentialNewType;
-        if (incompatibleType) throw new IncompatibleTypeOfVehicleException("The type of vehicle "+potentialNewType+" is not compatible with type "+potentialNewBrand.getType());
         if(body.getBrand() != null) {
             existingVehicle.setBrand(potentialNewBrand);
             existingVehicle.setCountry(potentialNewBrand.getCountry());

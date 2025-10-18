@@ -5,7 +5,6 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
-import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
 import com.example.carpark.dto.vehicleownership.VehicleOwnershipRequestDTO;
@@ -60,14 +59,17 @@ public class VehicleOwnershipService {
 		boolean containsVehicle = body.getVehicle() != null;
 		boolean containsOwner = body.getOwner() != null;
 		Vehicle potentialVehicle = existingVehicleOwnership.getVehicle();
-		if(containsVehicle) potentialVehicle = vehicleService.getVehicleById(body.getVehicle().getId());
+		if(containsVehicle) potentialVehicle = vehicleService
+			.getVehicleById(body.getVehicle().getId());
 		Owner potentialOwner = existingVehicleOwnership.getOwner();
 		if(containsOwner) potentialOwner = ownerService.getOwnerById(body.getOwner().getId());
 		List<VehicleOwnership> vehicleOwnershipList = repo.findAllByOwner(potentialOwner);
 	    for(VehicleOwnership currentOwnership : vehicleOwnershipList) {
             if (!currentOwnership.getId().equals(existingVehicleOwnership.getId()) && 
-            	Objects.equals(currentOwnership.getVehicle().getPlaque(), potentialVehicle.getPlaque())) 
-            		throw new ResourceAlreadyExistsException("The owner already possesses this vehicle with plaque: "+potentialVehicle.getPlaque());
+            	Objects.equals(
+            		currentOwnership.getVehicle().getPlaque(), 
+            		potentialVehicle.getPlaque()))
+            	throw new ResourceAlreadyExistsException("The owner already possesses this vehicle with plaque: "+potentialVehicle.getPlaque());
 	    }
 	    existingVehicleOwnership.setOwner(potentialOwner);
 	    existingVehicleOwnership.setVehicle(potentialVehicle);

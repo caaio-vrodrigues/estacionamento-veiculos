@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import com.example.carpark.customexception.ClosedRentalServiceException;
 import com.example.carpark.customexception.IncompatibleParkingSpaceException;
 import com.example.carpark.customexception.IncompatibleTypeOfVehicleException;
-import com.example.carpark.customexception.MissingRequiredFieldException;
 import com.example.carpark.customexception.OccupiedParkingSpaceException;
 import com.example.carpark.customexception.ResourceAlreadyExistsException;
 import com.example.carpark.customexception.ResourceNotFoundException;
@@ -39,7 +38,7 @@ public class ParkingSpaceRentalService {
 		ParkingSpace parkingSpace = parkingSpaceService
 			.getParkingSpaceByPlaceId(body.getParkingSpace().getPlaceId());
 		boolean isParkingSpaceOccupied = parkingSpace.getOccupied() == true;
-		if(isParkingSpaceOccupied) throw new OccupiedParkingSpaceException("This parking space is already in use");
+		if(isParkingSpaceOccupied) throw new OccupiedParkingSpaceException("The parking space:"+parkingSpace.getPlaceId()+" is already in use");
 		VehicleOwnership vehicleOwnership = vehicleOwnershipService
 			.getVehicleOwnershipById(body.getVehicleOwnership().getId());
 		Vehicle vehicle = vehicleService.getVehicleById(vehicleOwnership.getVehicle().getId());
@@ -51,6 +50,8 @@ public class ParkingSpaceRentalService {
 				if(!isVehicleAlreadyInOpenParkingSpaceRental.isEmpty()) 
 					throw new ResourceAlreadyExistsException("The vehicle is already in the parking space. Vehicle plaque: "+vehicleOwnership.getVehicle().getPlaque());
 		}
+		boolean isSameType = parkingSpace.getType() == vehicle.getType();
+		if(!isSameType) throw new IncompatibleTypeOfVehicleException("Incompatible type of vehicle "+vehicle.getType()+" with type of parking space "+parkingSpace.getType());
 		parkingSpace.setOccupied(true);
 		ParkingSpaceUpdateDTO parkingSpaceDTO = ParkingSpaceUpdateDTO.builder()
 			.occupied(true)

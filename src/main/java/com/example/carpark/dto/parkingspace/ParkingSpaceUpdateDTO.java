@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class ParkingSpaceUpdateDTO {
-	private Integer id;
+	
 	private ParkingSpacePrice type;
 	private String placeId;
 	private Boolean occupied;

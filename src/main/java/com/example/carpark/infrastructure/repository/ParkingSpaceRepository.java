@@ -11,5 +11,5 @@ import com.example.carpark.infrastructure.entity.ParkingSpace;
 public interface ParkingSpaceRepository extends JpaRepository<ParkingSpace, Integer> {
 	public Optional<ParkingSpace> findByPlaceId(String placeId);
 	public boolean existsByPlaceId(String placeId);
-	public boolean deleteByPlaceId(String placeId);
+	public ParkingSpace deleteByPlaceId(String placeId);
 }

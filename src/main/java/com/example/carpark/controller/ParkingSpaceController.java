@@ -49,7 +49,7 @@ public class ParkingSpaceController {
 		return ResponseEntity.ok(service.getParkingSpaceById(id));
 	}
 	
-	@GetMapping("place/{placeId}")
+	@GetMapping("space/{placeId}")
 	public ResponseEntity<ParkingSpace> searchParkingSpaceById(
 		@PathVariable String placeId
 	){
