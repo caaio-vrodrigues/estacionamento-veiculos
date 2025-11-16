@@ -174,7 +174,7 @@ Base: `/owner`
 *   `POST /owner`
 
     *   Descrição: Cria um novo proprietário.
-    *   Método: POST
+    *   Método: `POST`
     *   Corpo da Requisição: OwnerRequestDTO (JSON)
     ```json
     {
@@ -182,7 +182,7 @@ Base: `/owner`
         "driversLicense": "12345678900"
     }
     ```
-    *  Resposta: 200 OK com o Owner criado. 
+    *  Resposta: `200 OK` com o `Owner` criado. 
 
 *   `GET /owner`
 
